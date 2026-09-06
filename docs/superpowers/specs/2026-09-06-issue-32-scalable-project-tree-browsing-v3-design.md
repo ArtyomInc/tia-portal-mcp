@@ -457,7 +457,8 @@ weakening the semantic or structural criteria.
 
 ## Current verification boundary
 
-This document records the completed design discussion only. No production code, tests, package
-version, or live TIA Portal state has been changed for issue #32. Implementation planning begins
-only after the user reviews and approves this written specification. Live TIA Portal acceptance
-will still require separate authorization after offline implementation is complete.
+This document records the completed and approved design discussion. The corresponding
+[implementation plan](../plans/2026-09-06-issue-32-scalable-project-tree-browsing-v3.md) now
+defines the task-level TDD, verification, commit, and acceptance gates. No production code, tests,
+package version, or live TIA Portal state has yet been changed for issue #32. Live TIA Portal
+acceptance still requires separate authorization after offline implementation is complete.

@@ -40,6 +40,7 @@ Task-level implementation plans derived from the specs above.
 
 | Date | Document |
 | --- | --- |
+| 2026-09-06 | [Issue #32 scalable project-tree browsing v3](plans/2026-09-06-issue-32-scalable-project-tree-browsing-v3.md) |
 | 2026-09-01 | [PR 1 — explicit MCP tool annotations](plans/2026-09-01-pr1-explicit-mcp-tool-annotations.md) |
 | 2026-09-01 | [PR 2 — registered-tool delegation](plans/2026-09-01-pr2-registered-tool-delegation.md) |
 | 2026-09-01 | [PR 3 — exact `update_tag` safety snapshot](plans/2026-09-01-pr3-update-tag-safety-snapshot.md) |
