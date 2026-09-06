@@ -21,6 +21,7 @@ Design documents, written before implementation.
 
 | Date | Document |
 | --- | --- |
+| 2026-09-06 | [Issue #32 scalable project-tree browsing v3](specs/2026-09-06-issue-32-scalable-project-tree-browsing-v3-design.md) |
 | 2026-09-01 | [Write-safety preview and registered-surface hardening](specs/2026-09-01-write-safety-hardening-design.md) |
 | 2026-08-28 | [Issue #31 project completeness and hardware pagination](specs/2026-08-28-issue-31-project-completeness-pagination-design.md) |
 | 2026-08-28 | [PR #29 binding findings repair](specs/2026-08-28-pr29-binding-findings-repair-design.md) |

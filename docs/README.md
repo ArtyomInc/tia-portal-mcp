@@ -46,7 +46,8 @@ Agent-facing build and convention reference lives in [AGENTS.md](../AGENTS.md).
 acceptance reports produced while building features. It is historical process material, not
 current documentation — see its index for what is there and how to read it.
 
-Latest process entries: [write-safety preview and registered-surface hardening design](superpowers/specs/2026-09-01-write-safety-hardening-design.md),
+Latest process entries: [issue #32 scalable project-tree browsing v3 design](superpowers/specs/2026-09-06-issue-32-scalable-project-tree-browsing-v3-design.md),
+[write-safety preview and registered-surface hardening design](superpowers/specs/2026-09-01-write-safety-hardening-design.md),
 with separate plans for [PR 1 explicit MCP tool annotations](superpowers/plans/2026-09-01-pr1-explicit-mcp-tool-annotations.md),
 [its completed live acceptance report](superpowers/acceptance/reports/2026-09-01-pr1-explicit-mcp-tool-annotations-live.md),
 [PR 2 registered-tool delegation](superpowers/plans/2026-09-01-pr2-registered-tool-delegation.md),
