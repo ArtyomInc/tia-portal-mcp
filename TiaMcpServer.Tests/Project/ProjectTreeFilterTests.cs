@@ -59,7 +59,7 @@ public class ProjectTreeFilterTests
         yield return new object[] { "SoftwareUnit", "TypeFolder" };
         yield return new object[] { "BlockFolder", "BlockFolder" };
         yield return new object[] { "BlockFolder", "SystemBlockFolder" };
-        foreach (var leaf in ProjectTreeNodeTypes.BlockLeaves)
+        foreach (var leaf in new[] { "OB", "FB", "FC", "GlobalDB", "InstanceDB", "ArrayDB", "Block" })
         {
             yield return new object[] { "BlockFolder", leaf };
             yield return new object[] { "SystemBlockFolder", leaf };
@@ -387,8 +387,8 @@ public class ProjectTreeFilterTests
     public void TypedSelection_EqualsIndependentlyClonedSubtreeFromCompleteTree()
     {
         var full = TypedSampleTree();
-        var actual = ProjectTreeFilter.Apply(full, MotorsSelector(), depth: 2).Roots;
-        var expected = IndependentlyCloneAndPrune(FindMotors(full), depth: 2);
+        var actual = ProjectTreeFilter.Apply(full, BlocksSelector(), depth: 2).Roots;
+        var expected = IndependentlyCloneAndPrune(full[0].Children![0].Children![1], depth: 2);
 
         Assert.Equal(CanonicalJson.Serialize(new[] { expected }), CanonicalJson.Serialize(actual));
     }

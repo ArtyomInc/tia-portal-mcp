@@ -145,22 +145,22 @@ public sealed class ProjectTreeV3ContractTests
     {
         var expected = new[]
         {
-            ProjectTreeNodeTypes.Device,
-            ProjectTreeNodeTypes.PlcSoftware,
-            ProjectTreeNodeTypes.SoftwareUnit,
-            ProjectTreeNodeTypes.BlockFolder,
-            ProjectTreeNodeTypes.SystemBlockFolder,
-            ProjectTreeNodeTypes.Ob,
-            ProjectTreeNodeTypes.Fb,
-            ProjectTreeNodeTypes.Fc,
-            ProjectTreeNodeTypes.GlobalDb,
-            ProjectTreeNodeTypes.InstanceDb,
-            ProjectTreeNodeTypes.ArrayDb,
-            ProjectTreeNodeTypes.Block,
-            ProjectTreeNodeTypes.TagTableFolder,
-            ProjectTreeNodeTypes.TagTable,
-            ProjectTreeNodeTypes.TypeFolder,
-            ProjectTreeNodeTypes.Type
+            "Device",
+            "PlcSoftware",
+            "SoftwareUnit",
+            "BlockFolder",
+            "SystemBlockFolder",
+            "OB",
+            "FB",
+            "FC",
+            "GlobalDB",
+            "InstanceDB",
+            "ArrayDB",
+            "Block",
+            "TagTableFolder",
+            "TagTable",
+            "TypeFolder",
+            "Type"
         };
 
         Assert.Equal(

@@ -95,7 +95,7 @@ public class WorkerResponseJsonTests
     [InlineData(WorkerFailureCategories.SnapshotUnavailable)]
     [InlineData(WorkerFailureCategories.ResultItemTooLarge)]
     [InlineData(WorkerFailureCategories.ResultMetadataTooLarge)]
-    public void WorkerFailureCategories_RecognizesCursorFailureCategories(string category)
+    public void WorkerFailureCategories_RecognizesCursorAndProjectTreeFailureCategories(string category)
     {
         Assert.True(WorkerFailureCategories.IsKnown(category));
     }
