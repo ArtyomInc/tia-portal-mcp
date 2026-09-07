@@ -533,6 +533,13 @@ while ((line = Console.In.ReadLine()) is not null)
                 _ => $$"""{"success":false,"error":"unexpected project completeness method '{{ReadMethod(line)}}'"}"""
             });
             break;
+        case "project-tree-v3-snapshot":
+            Respond(ReadMethod(line) == "browse_project_tree_v3_snapshot"
+                && ReadField(line, "startPath") is null
+                && HasNonNullField(line, "startSelector")
+                ? Success(ToCamelCaseJson(ProjectTreeV3Snapshot()))
+                : $$"""{"success":false,"error":"expected typed browse_project_tree_v3_snapshot without startPath"}""");
+            break;
         case "hardware-pagination":
             // The host owns cursor authentication, binding, and public projection. This scenario
             // deliberately mirrors only the internal typed candidate seam: duplicate device names,
@@ -1300,6 +1307,20 @@ string? ReadField(string requestLine, string propertyName)
     }
 }
 
+bool HasNonNullField(string requestLine, string propertyName)
+{
+    try
+    {
+        using var document = JsonDocument.Parse(requestLine);
+        return document.RootElement.TryGetProperty(propertyName, out var value)
+            && value.ValueKind != JsonValueKind.Null;
+    }
+    catch (JsonException)
+    {
+        return false;
+    }
+}
+
 // Renders a real Contracts DTO as camelCase JSON. Used by scenarios that must serialize through
 // complete contract-shaped objects (HardwareConfigInfo, ConfigureNetworkDeviceResultInfo) rather
 // than hand-maintained escaped JSON string fragments: the CLR type is the source of truth for
@@ -1590,6 +1611,19 @@ List<ProjectTreeNode> ProjectCompletenessTree() => new()
             },
         },
     },
+};
+
+ProjectTreeBrowseResultInfo ProjectTreeV3Snapshot() => new()
+{
+    StartSelector = new List<ProjectTreeSelectorSegment>
+    {
+        new() { NodeType = ProjectTreeNodeTypes.Device, Name = "PLC_1" }
+    },
+    Depth = 1,
+    Roots = new List<ProjectTreeNode>
+    {
+        new() { Name = "PLC_1", NodeType = ProjectTreeNodeTypes.Device, Details = null, Children = new List<ProjectTreeNode>() }
+    }
 };
 
 string ProjectTreeDedupResponse(string requestLine)

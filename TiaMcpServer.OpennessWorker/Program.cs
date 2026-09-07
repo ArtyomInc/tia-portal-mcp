@@ -145,6 +145,7 @@ internal static class Program
             return request.Method switch
             {
                 "browse_project_tree" => BrowseProjectTree(request),
+                "browse_project_tree_v3_snapshot" => BrowseProjectTreeV3Snapshot(request),
                 "read_create_block_safety_snapshot" => ReadCreateBlockSafetySnapshot(request),
                 "read_create_block_group_safety_snapshot" => ReadCreateBlockGroupSafetySnapshot(request),
                 "read_delete_block_group_safety_snapshot" => ReadDeleteBlockGroupSafetySnapshot(request),
@@ -243,6 +244,28 @@ internal static class Program
             var tree = new ProjectTreeWalker().Walk(project);
             return Success(ProjectTreeFilter.Apply(tree, request.StartPath, request.Depth));
         });
+    }
+
+    private static WorkerResponse BrowseProjectTreeV3Snapshot(WorkerRequest request)
+    {
+        try
+        {
+            ProjectTreeNodeTypes.Validate(request.StartSelector);
+            return WithProject(request, project =>
+            {
+                var selected = new ProjectTreeSnapshotWalker().WalkSnapshot(project, request.StartSelector, request.Depth);
+                return Success(new ProjectTreeBrowseResultInfo
+                {
+                    StartSelector = selected.CanonicalStartSelector?.ToList(),
+                    Depth = request.Depth,
+                    Roots = selected.Roots.ToList()
+                });
+            });
+        }
+        catch (ProjectTreeSelectionException exception)
+        {
+            throw new WorkerOperationException(exception.Category, exception.Message);
+        }
     }
 
     private static WorkerResponse ReadHardwareConfig(WorkerRequest request)

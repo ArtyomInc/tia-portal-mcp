@@ -77,7 +77,7 @@ public class ProjectStandaloneToolTests
         Assert.Equal("echo", request.GetProperty("projectPath").GetString());
         Assert.Equal(2, request.GetProperty("depth").GetInt32());
         Assert.Equal("PLC_1/Blocks", request.GetProperty("startPath").GetString());
-        Assert.False(request.TryGetProperty("startSelector", out _));
+        Assert.Equal(JsonValueKind.Null, request.GetProperty("startSelector").ValueKind);
     }
 
     [Fact]

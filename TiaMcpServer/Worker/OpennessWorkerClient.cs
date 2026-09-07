@@ -205,6 +205,23 @@ public class OpennessWorkerClient : IDisposable
             "[]");
     }
 
+    public Task<WorkerCallResult> BrowseProjectTreeV3SnapshotAsync(
+        string? projectPath = null,
+        IReadOnlyList<ProjectTreeSelectorSegment>? startSelector = null,
+        int? depth = null)
+    {
+        ProjectTreeNodeTypes.Validate(startSelector);
+        return SendBoundProjectRequestAsync(
+            "browse_project_tree_v3_snapshot",
+            projectPath,
+            request =>
+            {
+                request.StartSelector = startSelector?.ToList();
+                request.Depth = depth;
+            },
+            "{}");
+    }
+
     /// <summary>
     /// Sends a <c>read_hardware_config</c> request to the worker. <paramref name="deviceName"/>
     /// narrows to exactly one device, <paramref name="plcName"/> selects the PLC used for tag
