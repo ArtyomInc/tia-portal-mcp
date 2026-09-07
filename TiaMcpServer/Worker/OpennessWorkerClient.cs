@@ -6,6 +6,40 @@ using TiaMcpServer.Diagnostics;
 
 namespace TiaMcpServer.Worker;
 
+internal static class WorkerTransportFailureGuidance
+{
+    public const string SafeReadTimeout =
+        "The TIA Openness worker did not complete the read before the timeout. No project or PLC runtime mutation was requested. The worker session was discarded; retrying the read is safe.";
+
+    public const string SafeReadCrash =
+        "The TIA Openness worker stopped before returning the read result. No project or PLC runtime mutation was requested. The worker will restart on the next worker call; retrying the read is safe.";
+
+    public const string StateAffectingTimeout =
+        "The TIA Openness worker timed out before completion was confirmed. The project or PLC runtime state may have changed. Inspect current state before retrying.";
+
+    public const string StateAffectingCrash =
+        "The TIA Openness worker stopped before completion was confirmed. The project or PLC runtime state may have changed. Inspect current state before retrying.";
+
+    internal static bool IsSafeRead(string? method)
+    {
+        if (string.IsNullOrWhiteSpace(method))
+        {
+            return false;
+        }
+
+        return OperationPolicyCatalog.GetCapability(method) is
+            OperationCapability.Observe or
+            OperationCapability.TemporaryExport or
+            OperationCapability.SafetyRead;
+    }
+
+    internal static string TimeoutGuidance(string? method)
+        => IsSafeRead(method) ? SafeReadTimeout : StateAffectingTimeout;
+
+    internal static string CrashGuidance(string? method)
+        => IsSafeRead(method) ? SafeReadCrash : StateAffectingCrash;
+}
+
 public class OpennessWorkerClient : IDisposable
 {
     private static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromMinutes(5);
