@@ -86,7 +86,7 @@ public class HardwarePageCursorCodecTests
     public void Decode_RejectsExtraMember()
     {
         var payload = ValidPayloadJson();
-        payload = payload[..^1] + ",\"extra\":true}";
+        payload = AppendStateMember(payload, "\"extra\":true");
 
         AssertInvalidSignedPayload(payload);
     }
@@ -95,7 +95,7 @@ public class HardwarePageCursorCodecTests
     public void Decode_RejectsDuplicateMember()
     {
         var payload = ValidPayloadJson();
-        payload = payload[..^1] + ",\"version\":1}";
+        payload = AppendStateMember(payload, "\"version\":1");
 
         AssertInvalidSignedPayload(payload);
     }
@@ -116,7 +116,10 @@ public class HardwarePageCursorCodecTests
     public void Decode_RejectsCorrectlySignedPayloadWithNoncanonicalPropertyOrder()
     {
         var canonical = ValidPayloadJson();
-        var noncanonical = "{\"offset\":3," + canonical[1..].Replace(",\"offset\":3", string.Empty, StringComparison.Ordinal);
+        const string StatePrefix = "\"state\":{";
+        var stateStart = canonical.IndexOf(StatePrefix, StringComparison.Ordinal) + StatePrefix.Length;
+        var withoutOffset = canonical.Replace(",\"offset\":3}}", "}}", StringComparison.Ordinal);
+        var noncanonical = withoutOffset.Insert(stateStart, "\"offset\":3,");
 
         AssertInvalidSignedPayload(noncanonical);
     }
@@ -150,7 +153,7 @@ public class HardwarePageCursorCodecTests
                 ProjectPathNormalization.Canonicalize(@"C:\Projects\Other.ap21")),
         };
 
-        AssertInvalidSignedPayload(CanonicalJson.Serialize(state));
+        AssertInvalidSignedPayload(AuthenticatedPayloadJson(state));
     }
 
     [Fact]
@@ -316,10 +319,17 @@ public class HardwarePageCursorCodecTests
             null);
 
     private static string ValidPayloadJson()
+        => AuthenticatedPayloadJson(State());
+
+    private static string AuthenticatedPayloadJson(HardwarePageCursorState state)
     {
-        var cursor = Codec(TestKey).Encode(State());
+        using var protector = new AuthenticatedCursorProtector(TestKey, "process-a");
+        var cursor = protector.Protect("hardware-page", state);
         return Encoding.UTF8.GetString(DecodeBase64Url(cursor.Split('.')[0]));
     }
+
+    private static string AppendStateMember(string payload, string member)
+        => payload[..^2] + "," + member + "}}";
 
     private static void AssertInvalidSignedPayload(string payload)
         => AssertCategory(
