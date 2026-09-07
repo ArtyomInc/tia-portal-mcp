@@ -123,7 +123,8 @@ public sealed class ProjectTreeSnapshotWalker
                 ArrayDB => ProjectTreeNodeTypes.ArrayDb,
                 _ => ProjectTreeNodeTypes.Block
             },
-            Details = details
+            Details = details,
+            Children = new List<ProjectTreeNode>()
         };
     }
 
@@ -148,7 +149,7 @@ public sealed class ProjectTreeSnapshotWalker
         var children = new List<ProjectTreeNode>();
         foreach (PlcTagTable table in group.TagTables)
         {
-            try { children.Add(new ProjectTreeNode { Name = table.Name, NodeType = ProjectTreeNodeTypes.TagTable, Details = null }); }
+            try { children.Add(new ProjectTreeNode { Name = table.Name, NodeType = ProjectTreeNodeTypes.TagTable, Details = null, Children = new List<ProjectTreeNode>() }); }
             catch (EngineeringException ex) { Console.Error.WriteLine($"Skipping a tag table while walking tag table group '{group.Name}': {ex.Message}"); }
         }
         foreach (PlcTagTableGroup childGroup in group.Groups)
@@ -164,7 +165,7 @@ public sealed class ProjectTreeSnapshotWalker
         var children = new List<ProjectTreeNode>();
         foreach (PlcType type in group.Types)
         {
-            try { children.Add(new ProjectTreeNode { Name = type.Name, NodeType = ProjectTreeNodeTypes.Type, Details = null }); }
+            try { children.Add(new ProjectTreeNode { Name = type.Name, NodeType = ProjectTreeNodeTypes.Type, Details = null, Children = new List<ProjectTreeNode>() }); }
             catch (EngineeringException ex) { Console.Error.WriteLine($"Skipping a PLC data type while walking type group '{group.Name}': {ex.Message}"); }
         }
         foreach (PlcTypeGroup childGroup in group.Groups)
