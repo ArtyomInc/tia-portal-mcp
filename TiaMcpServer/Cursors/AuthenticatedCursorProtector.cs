@@ -25,6 +25,13 @@ internal sealed class AuthenticatedCursorException : Exception
     }
 }
 
+internal sealed class AuthenticatedCursorSizeException(int cursorChars, int limitChars)
+    : InvalidOperationException("The authenticated cursor exceeds its character limit.")
+{
+    internal int CursorChars { get; } = cursorChars;
+    internal int LimitChars { get; } = limitChars;
+}
+
 internal sealed class AuthenticatedCursorProtector : IDisposable
 {
     private const int CurrentFormatVersion = 1;
@@ -82,7 +89,13 @@ internal sealed class AuthenticatedCursorProtector : IDisposable
         var payload = Encoding.UTF8.GetBytes(CanonicalJson.Serialize(
             new Envelope<TState>(CurrentFormatVersion, _processInstanceId, purpose, state)));
         var signature = ComputeSignature(payload);
-        return $"{EncodeBase64Url(payload)}.{EncodeBase64Url(signature)}";
+        var cursor = $"{EncodeBase64Url(payload)}.{EncodeBase64Url(signature)}";
+        if (cursor.Length > MaxCursorChars)
+        {
+            throw new AuthenticatedCursorSizeException(cursor.Length, MaxCursorChars);
+        }
+
+        return cursor;
     }
 
     internal AuthenticatedCursorResult<TState> Unprotect<TState>(string purpose, string cursor)
