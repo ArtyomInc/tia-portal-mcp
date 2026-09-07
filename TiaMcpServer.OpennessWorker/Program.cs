@@ -1538,7 +1538,8 @@ internal static class Program
 
     private static WorkerResponse Success<T>(T payload)
     {
-        var payloadOptions = payload is NetworkObjectListInfo
+        // These closed-shape contracts require nullable members to remain explicit on the wire.
+        var payloadOptions = payload is NetworkObjectListInfo or ProjectTreeBrowseResultInfo
             ? NetworkObjectListJsonOptions
             : JsonOptions;
         return new WorkerResponse
