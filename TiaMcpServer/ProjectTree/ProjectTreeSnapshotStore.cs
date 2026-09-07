@@ -150,15 +150,17 @@ internal sealed class ProjectTreeSnapshotStore : IDisposable
 
     private void InsertAndEvict(ProjectTreeSnapshotEntry entry, DateTimeOffset now)
     {
+        if (entry.SerializedChars > _maxSnapshotChars
+            || entry.SerializedChars > _maxAggregateChars)
+        {
+            throw new InvalidOperationException(
+                "The project-tree snapshot exceeds a configured snapshot or aggregate character limit.");
+        }
+
         RemoveExpired(now);
         if (_entries.ContainsKey(entry.SnapshotId))
         {
             throw new InvalidOperationException("A snapshot with the same ID is already cached.");
-        }
-
-        if (entry.SerializedChars > _maxSnapshotChars)
-        {
-            throw new InvalidOperationException("The project-tree snapshot exceeds the configured character limit.");
         }
 
         while (_entries.Count >= _maxSnapshots

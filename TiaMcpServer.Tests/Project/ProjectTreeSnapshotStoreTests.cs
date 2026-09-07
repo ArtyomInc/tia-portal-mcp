@@ -95,6 +95,24 @@ public class ProjectTreeSnapshotStoreTests
     }
 
     [Fact]
+    public void ProjectInitial_RejectsAggregateOversizedCandidateWithoutEvictingExistingEntry()
+    {
+        using var store = new ProjectTreeSnapshotStore(
+            new ManualTimeProvider(Instant),
+            maxSnapshots: 4,
+            maxSnapshotChars: 100,
+            maxAggregateChars: 50,
+            slidingTtl: TimeSpan.FromMinutes(10));
+        store.ProjectInitial(Candidate("existing", 25), _ => new Projection(true, true), result => result.HasNextPage);
+
+        var error = Assert.Throws<InvalidOperationException>(() => store.ProjectInitial(
+            Candidate("too-large", 75), _ => new Projection(true, true), result => result.HasNextPage));
+
+        Assert.Contains("aggregate", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.True(store.Access("existing", _ => new Projection(true, false), result => result.IsSuccess).Found);
+    }
+
+    [Fact]
     public async Task EntryCannotBeEvictedWhileItsPageIsProjected()
     {
         using var entered = new ManualResetEventSlim();
@@ -106,16 +124,27 @@ public class ProjectTreeSnapshotStoreTests
         var access = Task.Run(() => store.Access("a", _ =>
         {
             entered.Set();
-            release.Wait();
+            release.Wait(TimeSpan.FromSeconds(5));
             return new Projection(true, false);
         }, result => result.IsSuccess));
-        entered.Wait();
-        var insertion = Task.Run(() => store.ProjectInitial(
-            Candidate("b", 100), _ => new Projection(true, true), result => result.HasNextPage));
+        Task<Projection>? insertion = null;
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+            insertion = Task.Run(() => store.ProjectInitial(
+                Candidate("b", 100), _ => new Projection(true, true), result => result.HasNextPage));
 
-        Assert.NotSame(insertion, await Task.WhenAny(insertion, Task.Delay(TimeSpan.FromMilliseconds(100))));
-        release.Set();
-        await Task.WhenAll(access, insertion);
+            Assert.NotSame(insertion, await Task.WhenAny(insertion, Task.Delay(TimeSpan.FromMilliseconds(100))));
+        }
+        finally
+        {
+            release.Set();
+            await access.WaitAsync(TimeSpan.FromSeconds(5));
+            if (insertion is not null)
+            {
+                await insertion.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+        }
     }
 
     [Fact]

@@ -79,7 +79,7 @@ internal sealed class ProjectTreeCursorCodec
         => !string.IsNullOrWhiteSpace(snapshotId) && snapshotId.Length <= MaximumSnapshotIdChars;
 
     internal static bool IsValidQueryHash(string? queryHash)
-        => LowercaseSha256.IsMatch(queryHash ?? string.Empty);
+        => queryHash is { Length: 64 } && LowercaseSha256.IsMatch(queryHash);
 
     private static void Validate(ProjectTreeCursorState? state)
     {

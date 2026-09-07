@@ -86,6 +86,28 @@ public class ProjectTreeCursorCodecTests
         Assert.Equal(WorkerFailureCategories.SnapshotUnavailable, error.Category);
     }
 
+    [Fact]
+    public void Encode_RejectsQueryHashWithTrailingNewline()
+    {
+        using var protector = new AuthenticatedCursorProtector(TestKey, "process-a");
+
+        AssertCategory(WorkerFailureCategories.InvalidCursor, () =>
+            new ProjectTreeCursorCodec(protector).Encode(
+                new ProjectTreeCursorState("snapshot-1", QueryHash + "\n", 0)));
+    }
+
+    [Fact]
+    public void Decode_RejectsQueryHashWithTrailingNewline()
+    {
+        using var protector = new AuthenticatedCursorProtector(TestKey, "process-a");
+        var cursor = protector.Protect(
+            "project-tree",
+            new ProjectTreeCursorState("snapshot-1", QueryHash + "\n", 0));
+
+        AssertCategory(WorkerFailureCategories.InvalidCursor, () =>
+            new ProjectTreeCursorCodec(protector).Decode(cursor));
+    }
+
     private static void AssertCategory(string category, Action action)
     {
         var error = Assert.Throws<ProjectTreeCursorException>(action);
