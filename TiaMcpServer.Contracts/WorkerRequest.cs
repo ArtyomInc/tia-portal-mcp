@@ -160,6 +160,12 @@ public class WorkerRequest
     /// <summary>Forwarded by: browse_project_tree.</summary>
     public string? StartPath { get; set; }
 
+    /// <summary>
+    /// Forwarded by: browse_project_tree_v3_snapshot. The legacy <see cref="StartPath"/>
+    /// remains available for browse_project_tree until the v3 public cutover.
+    /// </summary>
+    public List<ProjectTreeSelectorSegment>? StartSelector { get; set; }
+
     /// <summary>Forwarded by: search_equipment_catalog.</summary>
     public string? Query { get; set; }
 

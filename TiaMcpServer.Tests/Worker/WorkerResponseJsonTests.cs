@@ -90,7 +90,12 @@ public class WorkerResponseJsonTests
     [InlineData("cursor_snapshot_mismatch")]
     [InlineData("cursor_out_of_range")]
     [InlineData("cursor_binding_mismatch")]
-    public void WorkerFailureCategories_RecognizesCursorFailureCategories(string category)
+    [InlineData(WorkerFailureCategories.InvalidSelector)]
+    [InlineData(WorkerFailureCategories.SnapshotTooLarge)]
+    [InlineData(WorkerFailureCategories.SnapshotUnavailable)]
+    [InlineData(WorkerFailureCategories.ResultItemTooLarge)]
+    [InlineData(WorkerFailureCategories.ResultMetadataTooLarge)]
+    public void WorkerFailureCategories_RecognizesCursorAndProjectTreeFailureCategories(string category)
     {
         Assert.True(WorkerFailureCategories.IsKnown(category));
     }

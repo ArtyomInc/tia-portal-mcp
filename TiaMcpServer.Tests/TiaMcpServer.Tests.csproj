@@ -56,6 +56,8 @@
       Link="Host\HardwarePageWorkerCallResult.cs" />
     <Compile Include="..\TiaMcpServer\Json\TiaJson.cs" Link="Host\Json\TiaJson.cs" />
     <Compile Include="..\TiaMcpServer\Json\CanonicalJson.cs" Link="Host\Json\CanonicalJson.cs" />
+    <Compile Include="..\TiaMcpServer\Cursors\*.cs" Link="Host\Cursors\%(Filename)%(Extension)" />
+    <Compile Include="..\TiaMcpServer\ProjectTree\*.cs" Link="Host\ProjectTree\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer\Tools\StructuredToolResult.cs"
       Link="Host\StructuredToolResult.cs" />
     <Compile Include="..\TiaMcpServer\Safety\WriteSafetyService.cs"
