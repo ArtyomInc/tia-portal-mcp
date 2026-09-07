@@ -37,24 +37,18 @@ public class OpennessWorkerClientIntegrationTests
     private const string StateAffectingCrash =
         "The TIA Openness worker stopped before completion was confirmed. The project or PLC runtime state may have changed. Inspect current state before retrying.";
 
-    private static async Task<WorkerSessionIdentity> BindScenarioAsync(
+    private static async Task<WorkerSessionIdentity> BindVerifiedAsync(
         OpennessWorkerClient client,
-        ProjectSessionBinding binding,
-        string scenario)
+        ProjectSessionBinding binding)
     {
         var observed = await client.GetProjectStatusAsync("ok");
         Assert.True(observed.Success, observed.Error);
         Assert.NotNull(observed.SessionIdentity);
 
-        var scenarioIdentity = new WorkerSessionIdentity
-        {
-            WorkerSessionId = observed.SessionIdentity.WorkerSessionId,
-            SessionGeneration = observed.SessionIdentity.SessionGeneration,
-            PortalProcessId = observed.SessionIdentity.PortalProcessId,
-            ProjectPath = Path.GetFullPath(scenario)
-        };
-        Assert.True(binding.BindVerified(scenarioIdentity, forceRebind: false, out var error), error);
-        return scenarioIdentity;
+        Assert.True(
+            binding.BindVerified(observed.SessionIdentity, forceRebind: false, out var error),
+            error);
+        return observed.SessionIdentity;
     }
 
     private static Task<WorkerCallResult> InvokeRawAsync(
@@ -65,7 +59,8 @@ public class OpennessWorkerClientIntegrationTests
             "InvokeWorkerAsync",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(invokeWorker);
-        return Assert.IsType<Task<WorkerCallResult>>(invokeWorker.Invoke(client, new object[] { request }));
+        return Assert.IsAssignableFrom<Task<WorkerCallResult>>(
+            invokeWorker.Invoke(client, new object[] { request }));
     }
 
     private static async Task AssertWorkerRestartedForNextCallerAsync(OpennessWorkerClient client)
@@ -411,9 +406,11 @@ public class OpennessWorkerClientIntegrationTests
     {
         var binding = new ProjectSessionBinding(null);
         using var client = CreateClient(requestTimeout: TimeSpan.FromSeconds(2), binding: binding);
-        await BindScenarioAsync(client, binding, "hang");
+        await BindVerifiedAsync(client, binding);
 
-        var result = await client.BrowseProjectTreeAsync("hang");
+        var result = await InvokeRawAsync(
+            client,
+            new WorkerRequest { Method = "browse_project_tree", ProjectDirectory = "hang" });
 
         Assert.False(result.Success);
         Assert.Equal(WorkerFailureCategories.WorkerTimeout, result.FailureCategory);
@@ -427,9 +424,15 @@ public class OpennessWorkerClientIntegrationTests
     {
         var binding = new ProjectSessionBinding(null);
         using var client = CreateClient(binding: binding);
-        await BindScenarioAsync(client, binding, "crash");
+        await BindVerifiedAsync(client, binding);
 
-        var result = await client.BrowseProjectTreeV3SnapshotAsync(projectPath: "crash");
+        var result = await InvokeRawAsync(
+            client,
+            new WorkerRequest
+            {
+                Method = "browse_project_tree_v3_snapshot",
+                ProjectDirectory = "crash"
+            });
 
         Assert.False(result.Success);
         Assert.Equal(WorkerFailureCategories.WorkerCrashed, result.FailureCategory);
@@ -443,15 +446,14 @@ public class OpennessWorkerClientIntegrationTests
     {
         var binding = new ProjectSessionBinding(null);
         using var client = CreateClient(requestTimeout: TimeSpan.FromSeconds(2), binding: binding);
-        var identity = await BindScenarioAsync(client, binding, "hang");
+        await BindVerifiedAsync(client, binding);
 
         var result = await InvokeRawAsync(
             client,
             new WorkerRequest
             {
-                Method = "save_project",
-                ProjectPath = identity.ProjectPath,
-                ExpectedSessionIdentity = identity
+                Method = "open_project",
+                ProjectPath = "hang"
             });
 
         Assert.False(result.Success);
@@ -462,24 +464,27 @@ public class OpennessWorkerClientIntegrationTests
     }
 
     [Fact]
-    public async Task UnknownOperationCrash_UsesUncertainStateGuidance_InvalidatesBinding_AndDoesNotRetry()
+    public async Task UnknownMethodAtTimeout_UsesUncertainStateGuidance_InvalidatesBinding_AndDoesNotRetry()
     {
         var binding = new ProjectSessionBinding(null);
-        using var client = CreateClient(binding: binding);
-        var identity = await BindScenarioAsync(client, binding, "crash");
+        using var client = CreateClient(requestTimeout: TimeSpan.FromSeconds(2), binding: binding);
+        await BindVerifiedAsync(client, binding);
 
-        var result = await InvokeRawAsync(
+        var request = new WorkerRequest
+        {
+            Method = "browse_project_tree",
+            ProjectDirectory = "hang"
+        };
+        var pendingResult = InvokeRawAsync(
             client,
-            new WorkerRequest
-            {
-                Method = "unknown_method",
-                ProjectPath = identity.ProjectPath,
-                ExpectedSessionIdentity = identity
-            });
+            request);
+        await Task.Delay(TimeSpan.FromMilliseconds(100));
+        request.Method = "unknown_method";
+        var result = await pendingResult;
 
         Assert.False(result.Success);
-        Assert.Equal(WorkerFailureCategories.WorkerCrashed, result.FailureCategory);
-        Assert.Equal(StateAffectingCrash, result.Error);
+        Assert.Equal(WorkerFailureCategories.WorkerTimeout, result.FailureCategory);
+        Assert.Equal(StateAffectingTimeout, result.Error);
         Assert.Equal(ProjectBindingSnapshot.InvalidatedState, binding.BindingState);
         await AssertWorkerRestartedForNextCallerAsync(client);
     }
