@@ -101,13 +101,40 @@ public class AuthenticatedCursorProtectorTests
             protector.Unprotect<TestState>(Purpose, Sign(invalidUtf8, TestKey)));
     }
 
-    [Fact]
-    public void Unprotect_RejectsInputLongerThan4096Characters()
+    [Theory]
+    [InlineData(4095)]
+    [InlineData(4096)]
+    public void ProtectUnprotect_AcceptsSignedCursorsAtTheLengthBoundary(int cursorChars)
     {
         using var protector = new AuthenticatedCursorProtector(TestKey, ProcessInstanceId);
+        var (state, signedCursor) = BoundaryCursor(cursorChars);
+
+        Assert.Equal(cursorChars, signedCursor.Length);
+        Assert.Equal(state, protector.Unprotect<TestState>(Purpose, signedCursor).State);
+        var produced = protector.Protect(Purpose, state);
+        Assert.Equal(signedCursor, produced);
+        Assert.Equal(state, protector.Unprotect<TestState>(Purpose, produced).State);
+    }
+
+    [Fact]
+    public void Unprotect_RejectsOtherwiseValidSignedCursorAboveTheLengthBoundary()
+    {
+        using var protector = new AuthenticatedCursorProtector(TestKey, ProcessInstanceId);
+        // Unpadded Base64URL skips lengths congruent to 1 mod 4, so 4097 is unattainable.
+        var (_, signedCursor) = BoundaryCursor(4098);
 
         Assert.Throws<AuthenticatedCursorException>(() =>
-            protector.Unprotect<TestState>(Purpose, new string('A', 4097)));
+            protector.Unprotect<TestState>(Purpose, signedCursor));
+    }
+
+    [Fact]
+    public void Protect_RejectsStateWhoseSignedCursorCannotBeConsumed()
+    {
+        using var protector = new AuthenticatedCursorProtector(TestKey, ProcessInstanceId);
+        var (state, signedCursor) = BoundaryCursor(4098);
+        Assert.Equal(4098, signedCursor.Length);
+
+        Assert.ThrowsAny<InvalidOperationException>(() => protector.Protect(Purpose, state));
     }
 
     [Fact]
@@ -168,6 +195,17 @@ public class AuthenticatedCursorProtectorTests
         yield return new object[] { canonical.Replace("\"formatVersion\":1", "\"formatVersion\":2", StringComparison.Ordinal) };
         yield return new object[] { canonical.Replace("\"processInstanceId\":\"process-a\"", "\"processInstanceId\":\"\"", StringComparison.Ordinal) };
         yield return new object[] { canonical + "{}" };
+    }
+
+    private static (TestState State, string Cursor) BoundaryCursor(int cursorChars)
+    {
+        const string prefix = "{\"formatVersion\":1,\"processInstanceId\":\"process-a\",\"purpose\":\"project-tree\",\"state\":{\"value\":\"";
+        const string suffix = "\"}}";
+        // Derive ASCII payload size independently of Protect; each extra byte changes framing length.
+        var valueChars = Enumerable.Range(0, cursorChars).Single(count =>
+            ((prefix.Length + count + suffix.Length) * 8 + 5) / 6 + 1 + 43 == cursorChars);
+        var value = new string('x', valueChars);
+        return (new TestState(value), Sign(prefix + value + suffix, TestKey));
     }
 
     private static string DecodePayload(string cursor)
