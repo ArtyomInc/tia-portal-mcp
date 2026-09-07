@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using TiaMcpServer.Contracts;
+using TiaMcpServer.Cursors;
 using TiaMcpServer.Json;
 using TiaMcpServer.Network;
 using Xunit;
@@ -16,7 +18,7 @@ public class HardwarePageCursorCodecTests
     [Fact]
     public void EncodeDecode_WithInjectedKey_IsDeterministicAndRoundTrips()
     {
-        var codec = new HardwarePageCursorCodec(TestKey);
+        var codec = Codec(TestKey);
         var state = State();
 
         var first = codec.Encode(state);
@@ -32,7 +34,7 @@ public class HardwarePageCursorCodecTests
     [Fact]
     public void Decode_RejectsAnyPayloadOrSignatureByteChange()
     {
-        var codec = new HardwarePageCursorCodec(TestKey);
+        var codec = Codec(TestKey);
         var parts = codec.Encode(State()).Split('.');
 
         AssertCategory(WorkerFailureCategories.InvalidCursor, () =>
@@ -51,12 +53,12 @@ public class HardwarePageCursorCodecTests
     public void Decode_RejectsMalformedBase64UrlAndEnvelopeParts(string cursor)
         => AssertCategory(
             WorkerFailureCategories.InvalidCursor,
-            () => new HardwarePageCursorCodec(TestKey).Decode(cursor));
+            () => Codec(TestKey).Decode(cursor));
 
     [Fact]
     public void Decode_RejectsNonCanonicalBase64UrlPadBits()
     {
-        var codec = new HardwarePageCursorCodec(TestKey);
+        var codec = Codec(TestKey);
         var parts = codec.Encode(State()).Split('.');
         var nonCanonicalSignature = ChangeUnusedPadBits(parts[1]);
 
@@ -85,7 +87,7 @@ public class HardwarePageCursorCodecTests
     public void Decode_RejectsExtraMember()
     {
         var payload = ValidPayloadJson();
-        payload = payload[..^1] + ",\"extra\":true}";
+        payload = AppendStateMember(payload, "\"extra\":true");
 
         AssertInvalidSignedPayload(payload);
     }
@@ -94,7 +96,7 @@ public class HardwarePageCursorCodecTests
     public void Decode_RejectsDuplicateMember()
     {
         var payload = ValidPayloadJson();
-        payload = payload[..^1] + ",\"version\":1}";
+        payload = AppendStateMember(payload, "\"version\":1");
 
         AssertInvalidSignedPayload(payload);
     }
@@ -115,8 +117,18 @@ public class HardwarePageCursorCodecTests
     public void Decode_RejectsCorrectlySignedPayloadWithNoncanonicalPropertyOrder()
     {
         var canonical = ValidPayloadJson();
-        var noncanonical = "{\"offset\":3," + canonical[1..].Replace(",\"offset\":3", string.Empty, StringComparison.Ordinal);
+        using var canonicalDocument = JsonDocument.Parse(canonical);
+        var state = canonicalDocument.RootElement.GetProperty("state");
+        var remainingMembers = state.EnumerateObject()
+            .Where(property => property.Name != "offset")
+            .Select(property => JsonSerializer.Serialize(property.Name) + ":" + property.Value.GetRawText());
+        var reorderedState = "{\"offset\":3," + string.Join(",", remainingMembers) + "}";
+        var noncanonical = canonical.Replace(state.GetRawText(), reorderedState, StringComparison.Ordinal);
 
+        using var document = JsonDocument.Parse(noncanonical);
+        Assert.Single(document.RootElement.GetProperty("state").EnumerateObject(), property => property.Name == "offset");
+        Assert.NotEqual(canonical, noncanonical);
+        Assert.Equal(canonical, CanonicalJson.Serialize(document.RootElement));
         AssertInvalidSignedPayload(noncanonical);
     }
 
@@ -149,17 +161,40 @@ public class HardwarePageCursorCodecTests
                 ProjectPathNormalization.Canonicalize(@"C:\Projects\Other.ap21")),
         };
 
-        AssertInvalidSignedPayload(CanonicalJson.Serialize(state));
+        AssertInvalidSignedPayload(AuthenticatedPayloadJson(state));
     }
 
     [Fact]
     public void Decode_RejectsCursorSignedByDifferentProcessKey()
     {
-        var cursor = new HardwarePageCursorCodec(TestKey).Encode(State());
+        var cursor = Codec(TestKey).Encode(State());
 
         AssertCategory(
             WorkerFailureCategories.InvalidCursor,
-            () => new HardwarePageCursorCodec(OtherKey).Decode(cursor));
+            () => Codec(OtherKey).Decode(cursor));
+    }
+
+    [Fact]
+    public void Decode_ForeignProcessStillMapsToHardwareInvalidCursor()
+    {
+        using var issuer = new AuthenticatedCursorProtector(TestKey, "process-a");
+        using var reader = new AuthenticatedCursorProtector(OtherKey, "process-b");
+        var cursor = new HardwarePageCursorCodec(issuer).Encode(State());
+
+        AssertCategory(
+            WorkerFailureCategories.InvalidCursor,
+            () => new HardwarePageCursorCodec(reader).Decode(cursor));
+    }
+
+    [Fact]
+    public void Decode_WrongPurposeStillMapsToHardwareInvalidCursor()
+    {
+        using var protector = new AuthenticatedCursorProtector(TestKey, "process-a");
+        var cursor = protector.Protect("project-tree", State());
+
+        AssertCategory(
+            WorkerFailureCategories.InvalidCursor,
+            () => new HardwarePageCursorCodec(protector).Decode(cursor));
     }
 
     [Fact]
@@ -292,15 +327,25 @@ public class HardwarePageCursorCodecTests
             null);
 
     private static string ValidPayloadJson()
+        => AuthenticatedPayloadJson(State());
+
+    private static string AuthenticatedPayloadJson(HardwarePageCursorState state)
     {
-        var cursor = new HardwarePageCursorCodec(TestKey).Encode(State());
+        using var protector = new AuthenticatedCursorProtector(TestKey, "process-a");
+        var cursor = protector.Protect("hardware-page", state);
         return Encoding.UTF8.GetString(DecodeBase64Url(cursor.Split('.')[0]));
     }
+
+    private static string AppendStateMember(string payload, string member)
+        => payload[..^2] + "," + member + "}}";
 
     private static void AssertInvalidSignedPayload(string payload)
         => AssertCategory(
             WorkerFailureCategories.InvalidCursor,
-            () => new HardwarePageCursorCodec(TestKey).Decode(Sign(payload, TestKey)));
+            () => Codec(TestKey).Decode(Sign(payload, TestKey)));
+
+    private static HardwarePageCursorCodec Codec(byte[] key)
+        => new(new AuthenticatedCursorProtector(key, "process-a"));
 
     private static string Sign(string payload, byte[] key)
     {
@@ -314,15 +359,14 @@ public class HardwarePageCursorCodecTests
 
     private static string ChangeUnusedPadBits(string value)
     {
-        var replacement = value[^1] switch
+        const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        var index = Alphabet.IndexOf(value[^1], StringComparison.Ordinal);
+        if (index < 0 || index % 4 != 0 || index == Alphabet.Length - 1)
         {
-            'A' => 'B',
-            'Q' => 'R',
-            'g' => 'h',
-            'w' => 'x',
-            _ => throw new InvalidOperationException("A 32-byte value must end in canonical two-bit base64 data."),
-        };
-        return value[..^1] + replacement;
+            throw new InvalidOperationException("A 32-byte value must end in canonical base64 data with two zero pad bits.");
+        }
+
+        return value[..^1] + Alphabet[index + 1];
     }
 
     private static string EncodeBase64Url(byte[] bytes)

@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using TiaMcpServer.Contracts;
+using TiaMcpServer.Cursors;
 using TiaMcpServer.OperationBatches;
 using TiaMcpServer.Tools;
 using TiaMcpServer.Worker;
@@ -15,8 +16,8 @@ public class NetworkReadTools
     private const string ToolName = "network_read";
     private static readonly ConditionalWeakTable<OpennessWorkerClient, NetworkReadOperationExecutor>
         CompatibilityExecutors = new();
-    internal static HardwarePageCursorCodec ProcessCursorCodec { get; }
-        = HardwarePageCursorCodec.CreateProcessScoped();
+    internal static HardwarePageCursorCodec CompatibilityCursorCodec { get; }
+        = new(AuthenticatedCursorProtector.CreateProcessScoped());
 
     [McpServerTool(
         Name = ToolName,
@@ -71,10 +72,10 @@ public class NetworkReadTools
 
     private static NetworkReadOperationExecutor CreateCompatibilityExecutor(OpennessWorkerClient workerClient)
     {
-        var projector = new HardwarePageProjector(ProcessCursorCodec);
+        var projector = new HardwarePageProjector(CompatibilityCursorCodec);
         var coordinator = new HardwarePaginationCoordinator(
             workerClient,
-            ProcessCursorCodec,
+            CompatibilityCursorCodec,
             projector);
         return new NetworkReadOperationExecutor(workerClient, coordinator);
     }

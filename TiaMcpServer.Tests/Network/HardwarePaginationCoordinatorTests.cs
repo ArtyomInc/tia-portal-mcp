@@ -1,4 +1,5 @@
 using TiaMcpServer.Contracts;
+using TiaMcpServer.Cursors;
 using TiaMcpServer.Json;
 using TiaMcpServer.Network;
 using TiaMcpServer.OperationBatches;
@@ -70,6 +71,32 @@ public class HardwarePaginationCoordinatorTests
             });
         var operation = Operation(pageSize: null);
         operation.Cursor = "not-a-cursor";
+
+        var item = await coordinator.ExecuteAsync(operation);
+
+        Assert.Equal(0, workerCalls);
+        Assert.Equal(WorkerFailureCategories.InvalidCursor, item.Failure!.Category);
+    }
+
+    [Fact]
+    public async Task Coordinator_ForeignProcessCursorFailsBeforeWorkerAccess()
+    {
+        var binding = Unbound();
+        using var issuer = new AuthenticatedCursorProtector(new byte[32], "process-a");
+        using var reader = new AuthenticatedCursorProtector(Enumerable.Repeat((byte)1, 32).ToArray(), "process-b");
+        var issuerCodec = new HardwarePageCursorCodec(issuer);
+        var readerCodec = new HardwarePageCursorCodec(reader);
+        var workerCalls = 0;
+        var coordinator = Coordinator(
+            binding,
+            _ =>
+            {
+                workerCalls++;
+                throw new InvalidOperationException("Worker must not be called.");
+            },
+            readerCodec);
+        var operation = Operation(pageSize: null);
+        operation.Cursor = Cursor(binding, offset: 0, codec: issuerCodec);
 
         var item = await coordinator.ExecuteAsync(operation);
 
@@ -217,8 +244,12 @@ public class HardwarePaginationCoordinatorTests
 
     private static HardwarePaginationCoordinator Coordinator(
         ProjectBindingSnapshot binding,
-        Func<HardwarePageCandidateCall, Task<HardwarePageWorkerCallResult>> read)
-        => new(Codec(), new HardwarePageProjector(Codec()), () => binding, read);
+        Func<HardwarePageCandidateCall, Task<HardwarePageWorkerCallResult>> read,
+        HardwarePageCursorCodec? cursorCodec = null)
+    {
+        cursorCodec ??= Codec();
+        return new(cursorCodec, new HardwarePageProjector(cursorCodec), () => binding, read);
+    }
 
     private static HardwarePageWorkerCallResult Success(
         HardwarePageCandidateCall call,
@@ -268,8 +299,9 @@ public class HardwarePaginationCoordinatorTests
     private static string Cursor(
         ProjectBindingSnapshot binding,
         int offset,
-        string? deviceName = null)
-        => Codec().Encode(new HardwarePageCursorState(
+        string? deviceName = null,
+        HardwarePageCursorCodec? codec = null)
+        => (codec ?? Codec()).Encode(new HardwarePageCursorState(
             Version: 1,
             ResolvedProjectPath: ResolvedPath(),
             Identity(),
@@ -279,7 +311,8 @@ public class HardwarePaginationCoordinatorTests
             SnapshotHash,
             Offset: offset));
 
-    private static HardwarePageCursorCodec Codec() => new(new byte[32]);
+    private static HardwarePageCursorCodec Codec()
+        => new(new AuthenticatedCursorProtector(new byte[32], "hardware-pagination-tests"));
 
     private static string QueryHash(NetworkOperationRequest operation)
         => HardwarePageEvidence.CreateQueryHash(

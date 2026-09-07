@@ -12,6 +12,61 @@ public class HardwarePageProjectorTests
     private const string QueryHash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     private const string SnapshotHash = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
+    [Theory]
+    [InlineData(200, 2, false)]
+    [InlineData(200, 2, true)]
+    [InlineData(200, 1, false)]
+    [InlineData(100, 2, false)]
+    public void Project_PublishesOnlyResumableCursorsOrABoundedCursorOmission(
+        int pathCharacters, int totalDevices, bool oversizedWarnings)
+    {
+        var path = ProjectPathNormalization.Canonicalize(@"C:\Projects\" + new string('\u4e2d', pathCharacters) + @"\Sample.ap21")!;
+        var identity = Identity();
+        identity.ProjectPath = path;
+        var binding = new ProjectBindingSnapshot(
+            ProjectBindingSnapshot.VerifiedState, "binding-1", 7, path,
+            identity.WorkerSessionId, identity.SessionGeneration, identity.PortalProcessId, null);
+        var codec = Codec();
+        var warnings = new[] { oversizedWarnings ? new string('w', ItemLimit) : "public warning" };
+
+        var item = new HardwarePageProjector(codec).Project(
+            Operation(), Payload(totalDevices, 0, devices: new[] { DeviceCandidate(0, "device") }),
+            path, identity, binding, warnings);
+
+        Assert.True(CanonicalJson.Serialize(item).Length <= ItemLimit);
+        if (pathCharacters == 200 && totalDevices > 1)
+        {
+            Assert.Equal(OperationBatchStatus.Omitted, item.Status);
+            Assert.Null(item.Result);
+            Assert.Null(item.Failure);
+            Assert.Equal("hardwarePageCursorExceededCharLimit", item.Omission!.Reason);
+            Assert.Equal(4096, item.Omission.LimitChars);
+            Assert.True(item.Omission.OriginalChars > 4096);
+            Assert.Null(item.Omission.Subject);
+            Assert.Equal("network_read", item.Omission.RetryTool);
+            Assert.Equal("The hardware-page continuation cursor exceeds its character limit. Shorten the project path and start a new sequence, or retry without pagination if the result fits the item limit.", item.Omission.Guidance);
+            if (oversizedWarnings)
+                Assert.Empty(item.Warnings);
+            else
+                Assert.Equal(warnings, item.Warnings);
+        }
+        else
+        {
+            Assert.Equal(OperationBatchStatus.Succeeded, item.Status);
+            var result = CanonicalJson.Deserialize<HardwareConfigInfo>(item.Result!.Value.GetRawText());
+            Assert.Single(result.Devices);
+            if (totalDevices == 1)
+                Assert.Null(result.Pagination!.NextCursor);
+            else
+            {
+                var cursor = result.Pagination!.NextCursor!;
+                Assert.True(cursor.Length <= 4096);
+                Assert.Equal(1, codec.Decode(cursor).Offset);
+                Assert.Equal(path, codec.Decode(cursor).ResolvedProjectPath);
+            }
+        }
+    }
+
     [Fact]
     public void Project_KeepsAnItemOfExactlyTheCanonicalCharacterLimit()
     {

@@ -6,6 +6,7 @@ using TiaMcpServer.Batch;
 using TiaMcpServer.Cli;
 using TiaMcpServer.Cli.Install;
 using TiaMcpServer.Contracts;
+using TiaMcpServer.Cursors;
 using TiaMcpServer.Network;
 using TiaMcpServer.Safety;
 using TiaMcpServer.Tools;
@@ -68,7 +69,9 @@ namespace TiaMcpServer
                 sp.GetRequiredService<ProjectSessionBinding>(),
                 sp.GetRequiredService<ILogger<OpennessWorkerClient>>(),
                 accessPolicy: sp.GetRequiredService<OperationAccessPolicy>()));
-            builder.Services.AddSingleton(NetworkReadTools.ProcessCursorCodec);
+            builder.Services.AddSingleton(_ => AuthenticatedCursorProtector.CreateProcessScoped());
+            builder.Services.AddSingleton(sp => new HardwarePageCursorCodec(
+                sp.GetRequiredService<AuthenticatedCursorProtector>()));
             builder.Services.AddSingleton(sp => new HardwarePageProjector(
                 sp.GetRequiredService<HardwarePageCursorCodec>()));
             builder.Services.AddSingleton(sp => new HardwarePaginationCoordinator(

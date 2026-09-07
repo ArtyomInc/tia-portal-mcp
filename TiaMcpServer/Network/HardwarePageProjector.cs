@@ -1,4 +1,5 @@
 using TiaMcpServer.Contracts;
+using TiaMcpServer.Cursors;
 using TiaMcpServer.Json;
 using TiaMcpServer.OperationBatches;
 
@@ -11,6 +12,9 @@ internal sealed class HardwarePageProjector
 
     internal const string DiagnosticsLimitReason = "hardwarePageDiagnosticsExceededItemCharLimit";
     internal const string EntityLimitReason = "hardwarePageEntityExceededItemCharLimit";
+    internal const string CursorLimitReason = "hardwarePageCursorExceededCharLimit";
+    internal const string CursorLimitGuidance =
+        "The hardware-page continuation cursor exceeds its character limit. Shorten the project path and start a new sequence, or retry without pagination if the result fits the item limit.";
     internal const string RetryGuidance =
         "Retry the unchanged request at the same cursor, or start a new sequence with narrower filters or fewer detail options.";
 
@@ -46,15 +50,24 @@ internal sealed class HardwarePageProjector
             .Concat(payload.SubnetCandidates.Select(candidate => PageCandidate.ForSubnet(candidate)))
             .ToArray();
 
-        var pageOnly = BuildSucceededItem(
-            operation,
-            payload,
-            candidates,
-            returnedCount: 0,
-            resolvedProjectPath,
-            sessionIdentity,
-            hostBinding,
-            warnings);
+        StructuredOperationItem BuildItem(int returnedCount)
+        {
+            try
+            {
+                return BuildSucceededItem(
+                    operation, payload, candidates, returnedCount,
+                    resolvedProjectPath, sessionIdentity, hostBinding, warnings);
+            }
+            catch (AuthenticatedCursorSizeException exception)
+            {
+                return BoundedOmission(
+                    operation, CursorLimitReason, exception.CursorChars, exception.LimitChars,
+                    subject: null, warnings, maxItemChars);
+            }
+        }
+
+        // A terminal page may still succeed without a cursor even if this baseline cannot encode one.
+        var pageOnly = BuildItem(returnedCount: 0);
         var pageOnlyChars = ItemChars(pageOnly);
         if (pageOnlyChars > maxItemChars)
         {
@@ -69,15 +82,7 @@ internal sealed class HardwarePageProjector
 
         for (var returnedCount = candidates.Length; returnedCount > 0; returnedCount--)
         {
-            var prospective = BuildSucceededItem(
-                operation,
-                payload,
-                candidates,
-                returnedCount,
-                resolvedProjectPath,
-                sessionIdentity,
-                hostBinding,
-                warnings);
+            var prospective = BuildItem(returnedCount);
             var prospectiveChars = ItemChars(prospective);
             if (prospectiveChars <= maxItemChars)
             {
@@ -163,8 +168,10 @@ internal sealed class HardwarePageProjector
         int originalChars,
         int limitChars,
         StructuredOperationOmissionSubject? subject,
-        IReadOnlyList<string> warnings)
+        IReadOnlyList<string> warnings,
+        int? maxItemChars = null)
     {
+        var itemLimit = maxItemChars ?? limitChars;
         var omission = Omitted(
             operation,
             reason,
@@ -172,7 +179,7 @@ internal sealed class HardwarePageProjector
             limitChars,
             subject,
             warnings);
-        if (ItemChars(omission) <= limitChars)
+        if (ItemChars(omission) <= itemLimit)
         {
             return omission;
         }
@@ -186,7 +193,7 @@ internal sealed class HardwarePageProjector
                 limitChars,
                 subject: null,
                 warnings);
-            if (ItemChars(omission) <= limitChars)
+            if (ItemChars(omission) <= itemLimit)
             {
                 return omission;
             }
@@ -201,13 +208,13 @@ internal sealed class HardwarePageProjector
                 limitChars,
                 subject: null,
                 warnings: Array.Empty<string>());
-        if (ItemChars(minimal) > limitChars)
+        if (ItemChars(minimal) > itemLimit)
         {
             // Public catalog validation leaves ample room for this fixed envelope. Keep the
             // internal seam fail-closed as well: a future bypass must not silently publish an
             // operation item that violates the projector's promised limit.
             throw new InvalidOperationException(
-                $"The minimal hardware-page omission cannot fit the {limitChars}-character item limit.");
+                $"The minimal hardware-page omission cannot fit the {itemLimit}-character item limit.");
         }
 
         return minimal;
@@ -231,7 +238,7 @@ internal sealed class HardwarePageProjector
                 limitChars,
                 originalChars,
                 RetryTool,
-                RetryGuidance,
+                reason == CursorLimitReason ? CursorLimitGuidance : RetryGuidance,
                 subject),
             SkipReason: null,
             warnings);
