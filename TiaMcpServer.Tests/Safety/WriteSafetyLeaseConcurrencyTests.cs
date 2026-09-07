@@ -175,7 +175,7 @@ public sealed class WriteSafetyLeaseConcurrencyTests
     private static string QuoteArgument(string value)
         => $"\"{value.Replace("\"", "\\\"")}\"";
 
-    private const string StatefulWorkerScript = """
+    private static string StatefulWorkerScript => $$"""
         param(
             [Parameter(Mandatory = $true)][string]$MutationLogPath,
             [Parameter(Mandatory = $true)][string]$ProjectPath
@@ -183,9 +183,7 @@ public sealed class WriteSafetyLeaseConcurrencyTests
 
         $revision = 0
         $capabilities = @(
-            'expected-session-identity',
-            'response-session-identity',
-            'deterministic-project-selection'
+        {{string.Join("," + Environment.NewLine, WorkerProtocol.RequiredCapabilities.Select(capability => $"            '{capability}'"))}}
         )
 
         while (($line = [Console]::In.ReadLine()) -ne $null) {
@@ -194,7 +192,7 @@ public sealed class WriteSafetyLeaseConcurrencyTests
                 $hello = [ordered]@{
                     success = $true
                     payload = '{}'
-                    protocolVersion = 'project-binding-v1'
+                    protocolVersion = '{{WorkerProtocol.Version}}'
                     capabilities = $capabilities
                 }
                 [Console]::Out.WriteLine(($hello | ConvertTo-Json -Compress -Depth 6))

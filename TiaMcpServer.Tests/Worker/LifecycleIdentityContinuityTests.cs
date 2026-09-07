@@ -247,7 +247,7 @@ public sealed class LifecycleIdentityContinuityTests
         ProjectBindingSnapshot Before,
         ProjectBindingSnapshot After);
 
-    private const string LifecycleWorkerScript = """
+    private static string LifecycleWorkerScript => $$"""
         param([Parameter(Mandatory = $true)][string]$ResponseBase64)
 
         $operationResponse = [Text.Encoding]::UTF8.GetString(
@@ -258,11 +258,9 @@ public sealed class LifecycleIdentityContinuityTests
                 $hello = [ordered]@{
                     success = $true
                     payload = '{}'
-                    protocolVersion = 'project-binding-v1'
+                    protocolVersion = '{{WorkerProtocol.Version}}'
                     capabilities = @(
-                        'expected-session-identity',
-                        'response-session-identity',
-                        'deterministic-project-selection'
+        {{string.Join("," + Environment.NewLine, WorkerProtocol.RequiredCapabilities.Select(capability => $"                        '{capability}'"))}}
                     )
                 }
                 [Console]::Out.WriteLine(($hello | ConvertTo-Json -Compress -Depth 6))
