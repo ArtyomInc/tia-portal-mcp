@@ -1,15 +1,15 @@
-// Offline boundary doubles for the source-linked safety reader. These model only the
-// Siemens object access it consumes; no Openness assemblies or processes are loaded.
+// Offline boundary doubles for source-linked readers and the project snapshot walker.
+// These model object access only; no Openness assemblies or processes are loaded.
 using System.Collections;
 
 namespace Siemens.Engineering
 {
-    internal abstract class NamedObject
+    public abstract class NamedObject
     {
         public string Name { get; set; } = string.Empty;
     }
 
-    internal class Composition<T> : IEnumerable<T> where T : NamedObject
+    public class Composition<T> : IEnumerable<T> where T : NamedObject
     {
         public List<T> Items { get; } = new();
         public Exception? EnumerationFailure { get; set; }
@@ -25,29 +25,30 @@ namespace Siemens.Engineering
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
-    internal sealed class Project
+    public sealed class Project
     {
         public Composition<HW.Device> Devices { get; } = new();
         public Composition<HW.DeviceUserGroup> DeviceGroups { get; } = new();
     }
 
-    internal enum ExportOptions { None }
-    internal enum DocumentInfoOptions { None }
+    public enum ExportOptions { None }
+    public enum DocumentInfoOptions { None }
+    public class EngineeringException : Exception { }
 }
 
 namespace Siemens.Engineering.HW
 {
-    internal sealed class Device : NamedObject
+    public sealed class Device : NamedObject
     {
         public DeviceItemComposition DeviceItems { get; } = new();
     }
-    internal sealed class DeviceUserGroup : NamedObject
+    public sealed class DeviceUserGroup : NamedObject
     {
         public Composition<Device> Devices { get; } = new();
         public Composition<DeviceUserGroup> Groups { get; } = new();
     }
-    internal sealed class DeviceItemComposition : Composition<DeviceItem> { }
-    internal sealed class DeviceItem : NamedObject
+    public sealed class DeviceItemComposition : Composition<DeviceItem> { }
+    public sealed class DeviceItem : NamedObject
     {
         public DeviceItemComposition DeviceItems { get; } = new();
         public Features.SoftwareContainer? Container { get; set; }
@@ -63,7 +64,7 @@ namespace Siemens.Engineering.HW
 
 namespace Siemens.Engineering.HW.Features
 {
-    internal sealed class SoftwareContainer
+    public sealed class SoftwareContainer
     {
         public object? Software { get; set; }
     }
@@ -71,30 +72,33 @@ namespace Siemens.Engineering.HW.Features
 
 namespace Siemens.Engineering.SW
 {
-    internal sealed class PlcSoftware : NamedObject
+    public sealed class PlcSoftware : NamedObject
     {
         private readonly Blocks.PlcBlockSystemGroup blockGroup = new();
         public Tags.PlcTagTableGroup TagTableGroup { get; } = new();
         public Exception? BlockGroupFailure { get; set; }
         public Blocks.PlcBlockSystemGroup BlockGroup => BlockGroupFailure is null ? blockGroup : throw BlockGroupFailure;
+        public Types.PlcTypeGroup TypeGroup { get; } = new();
+        public Units.PlcUnitProvider? UnitProvider { get; set; }
+        public T? GetService<T>() where T : class => UnitProvider as T;
     }
 }
 
 namespace Siemens.Engineering.SW.Tags
 {
-    internal sealed class PlcTagTableGroup : NamedObject
+    public sealed class PlcTagTableGroup : NamedObject
     {
         public Composition<PlcTagTable> TagTables { get; } = new();
         public Composition<PlcTagTableGroup> Groups { get; } = new();
     }
-    internal sealed class PlcTagTable : NamedObject
+    public sealed class PlcTagTable : NamedObject
     {
         public Composition<PlcTag> Tags { get; } = new();
         public Composition<PlcUserConstant> UserConstants { get; } = new();
         public void Export(FileInfo path, ExportOptions options, DocumentInfoOptions documentInfo)
             => throw new NotSupportedException("Export is outside this offline collision fixture.");
     }
-    internal sealed class PlcTag : NamedObject
+    public sealed class PlcTag : NamedObject
     {
         public string DataTypeName { get; set; } = "Bool";
         public string LogicalAddress { get; set; } = "%I0.0";
@@ -102,7 +106,7 @@ namespace Siemens.Engineering.SW.Tags
         public bool ExternalVisible { get; set; }
         public bool ExternalWritable { get; set; }
     }
-    internal sealed class PlcUserConstant : NamedObject
+    public sealed class PlcUserConstant : NamedObject
     {
         public string DataTypeName { get; set; } = "Int";
         public object Value { get; set; } = "25";
@@ -111,19 +115,57 @@ namespace Siemens.Engineering.SW.Tags
 
 namespace Siemens.Engineering.SW.Blocks
 {
-    internal sealed class PlcBlock : NamedObject { }
-    internal class PlcBlockGroup : NamedObject
+    public class PlcBlock : NamedObject
+    {
+        public int Number { get; set; }
+        public string ProgrammingLanguage { get; set; } = "SCL";
+    }
+    public sealed class OB : PlcBlock { }
+    public sealed class FB : PlcBlock { }
+    public sealed class FC : PlcBlock { }
+    public sealed class GlobalDB : PlcBlock { }
+    public sealed class InstanceDB : PlcBlock { }
+    public sealed class ArrayDB : PlcBlock { }
+    public class PlcBlockGroup : NamedObject
     {
         public Composition<PlcBlock> Blocks { get; } = new();
         public Composition<PlcBlockGroup> Groups { get; } = new();
     }
-    internal sealed class PlcBlockSystemGroup : PlcBlockGroup
+    public sealed class PlcBlockSystemGroup : PlcBlockGroup
     {
         public Composition<PlcSystemBlockGroup> SystemBlockGroups { get; } = new();
     }
-    internal sealed class PlcSystemBlockGroup : NamedObject
+    public sealed class PlcSystemBlockGroup : NamedObject
     {
         public Composition<PlcBlock> Blocks { get; } = new();
         public Composition<PlcSystemBlockGroup> Groups { get; } = new();
+    }
+}
+
+namespace Siemens.Engineering.SW.Types
+{
+    public sealed class PlcType : NamedObject { }
+    public sealed class PlcTypeGroup : NamedObject
+    {
+        public Composition<PlcType> Types { get; } = new();
+        public Composition<PlcTypeGroup> Groups { get; } = new();
+    }
+}
+
+namespace Siemens.Engineering.SW.Units
+{
+    public sealed class PlcUnitProvider
+    {
+        public PlcUnitGroup UnitGroup { get; } = new();
+    }
+    public sealed class PlcUnitGroup
+    {
+        public Composition<PlcUnit> Units { get; } = new();
+    }
+    public sealed class PlcUnit : NamedObject
+    {
+        public Blocks.PlcBlockGroup BlockGroup { get; } = new();
+        public Tags.PlcTagTableGroup TagTableGroup { get; } = new();
+        public Types.PlcTypeGroup TypeGroup { get; } = new();
     }
 }

@@ -6,6 +6,40 @@ using TiaMcpServer.Diagnostics;
 
 namespace TiaMcpServer.Worker;
 
+internal static class WorkerTransportFailureGuidance
+{
+    public const string SafeReadTimeout =
+        "The TIA Openness worker did not complete the read before the timeout. No project or PLC runtime mutation was requested. The worker session was discarded; retrying the read is safe.";
+
+    public const string SafeReadCrash =
+        "The TIA Openness worker stopped before returning the read result. No project or PLC runtime mutation was requested. The worker will restart on the next worker call; retrying the read is safe.";
+
+    public const string StateAffectingTimeout =
+        "The TIA Openness worker timed out before completion was confirmed. The project or PLC runtime state may have changed. Inspect current state before retrying.";
+
+    public const string StateAffectingCrash =
+        "The TIA Openness worker stopped before completion was confirmed. The project or PLC runtime state may have changed. Inspect current state before retrying.";
+
+    internal static bool IsSafeRead(string? method)
+    {
+        if (string.IsNullOrWhiteSpace(method))
+        {
+            return false;
+        }
+
+        return OperationPolicyCatalog.GetCapability(method) is
+            OperationCapability.Observe or
+            OperationCapability.TemporaryExport or
+            OperationCapability.SafetyRead;
+    }
+
+    internal static string TimeoutGuidance(string? method)
+        => IsSafeRead(method) ? SafeReadTimeout : StateAffectingTimeout;
+
+    internal static string CrashGuidance(string? method)
+        => IsSafeRead(method) ? SafeReadCrash : StateAffectingCrash;
+}
+
 public class OpennessWorkerClient : IDisposable
 {
     private static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromMinutes(5);
@@ -203,6 +237,23 @@ public class OpennessWorkerClient : IDisposable
                 request.StartPath = startPath;
             },
             "[]");
+    }
+
+    public Task<WorkerCallResult> BrowseProjectTreeV3SnapshotAsync(
+        string? projectPath = null,
+        IReadOnlyList<ProjectTreeSelectorSegment>? startSelector = null,
+        int? depth = null)
+    {
+        ProjectTreeNodeTypes.Validate(startSelector);
+        return SendBoundProjectRequestAsync(
+            "browse_project_tree_v3_snapshot",
+            projectPath,
+            request =>
+            {
+                request.StartSelector = startSelector?.ToList();
+                request.Depth = depth;
+            },
+            "{}");
     }
 
     /// <summary>
@@ -1883,14 +1934,6 @@ public class OpennessWorkerClient : IDisposable
         return CapWarnings(combined);
     }
 
-    /// <summary>
-    /// Message used for every transport-level failure (timeout, crash, broken pipe, null
-    /// response, malformed protocol data): the write may or may not have reached TIA Portal, so
-    /// the caller must inspect current state rather than assume either outcome and retry.
-    /// </summary>
-    private const string InspectStateBeforeRetryGuidance =
-        "The write outcome is unknown. Inspect current project state before retrying.";
-
     private async Task<WorkerCallResult> InvokeWorkerAsync(WorkerRequest request)
     {
         // Defense in depth: authorize BEFORE the worker process is started, before any
@@ -1958,7 +2001,9 @@ public class OpennessWorkerClient : IDisposable
         catch (TimeoutException)
         {
             InvalidateVerifiedBinding("the Openness worker timed out and its session outcome is unknown");
-            return WorkerCallResult.Fail(WorkerFailureCategories.WorkerTimeout, InspectStateBeforeRetryGuidance);
+            return WorkerCallResult.Fail(
+                WorkerFailureCategories.WorkerTimeout,
+                WorkerTransportFailureGuidance.TimeoutGuidance(request.Method));
         }
         catch (PersistentWorkerTransport.WorkerProtocolMismatchException ex)
         {
@@ -1973,7 +2018,9 @@ public class OpennessWorkerClient : IDisposable
             // (InvalidOperationException), or malformed/protocol-desynced JSON (JsonException) —
             // all mean the worker cannot be trusted to have completed the request as sent.
             InvalidateVerifiedBinding("the Openness worker crashed or its protocol stream was lost");
-            return WorkerCallResult.Fail(WorkerFailureCategories.WorkerCrashed, InspectStateBeforeRetryGuidance);
+            return WorkerCallResult.Fail(
+                WorkerFailureCategories.WorkerCrashed,
+                WorkerTransportFailureGuidance.CrashGuidance(request.Method));
         }
     }
 

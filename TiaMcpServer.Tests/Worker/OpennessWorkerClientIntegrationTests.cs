@@ -25,8 +25,53 @@ public class OpennessWorkerClientIntegrationTests
             requestTimeout: requestTimeout,
             accessPolicy: accessPolicy);
 
-    private const string InspectStateBeforeRetryGuidance =
-        "The write outcome is unknown. Inspect current project state before retrying.";
+    private const string SafeReadTimeout =
+        "The TIA Openness worker did not complete the read before the timeout. No project or PLC runtime mutation was requested. The worker session was discarded; retrying the read is safe.";
+
+    private const string SafeReadCrash =
+        "The TIA Openness worker stopped before returning the read result. No project or PLC runtime mutation was requested. The worker will restart on the next worker call; retrying the read is safe.";
+
+    private const string StateAffectingTimeout =
+        "The TIA Openness worker timed out before completion was confirmed. The project or PLC runtime state may have changed. Inspect current state before retrying.";
+
+    private const string StateAffectingCrash =
+        "The TIA Openness worker stopped before completion was confirmed. The project or PLC runtime state may have changed. Inspect current state before retrying.";
+
+    private static async Task<WorkerSessionIdentity> BindVerifiedAsync(
+        OpennessWorkerClient client,
+        ProjectSessionBinding binding)
+    {
+        var observed = await client.GetProjectStatusAsync("ok");
+        Assert.True(observed.Success, observed.Error);
+        Assert.NotNull(observed.SessionIdentity);
+
+        Assert.True(
+            binding.BindVerified(observed.SessionIdentity, forceRebind: false, out var error),
+            error);
+        return observed.SessionIdentity;
+    }
+
+    private static Task<WorkerCallResult> InvokeRawAsync(
+        OpennessWorkerClient client,
+        WorkerRequest request)
+    {
+        var invokeWorker = typeof(OpennessWorkerClient).GetMethod(
+            "InvokeWorkerAsync",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(invokeWorker);
+        return Assert.IsAssignableFrom<Task<WorkerCallResult>>(
+            invokeWorker.Invoke(client, new object[] { request }));
+    }
+
+    private static async Task AssertWorkerRestartedForNextCallerAsync(OpennessWorkerClient client)
+    {
+        var recovered = await InvokeRawAsync(
+            client,
+            new WorkerRequest { Method = "get_project_status", ProjectPath = "ok" });
+
+        Assert.True(recovered.Success, recovered.Error);
+        Assert.Equal("{\"seq\":1}", recovered.Payload);
+    }
 
     [Fact]
     public async Task ReadHardwarePageCandidatesAsync_ForwardsTheDedicatedInternalRequest()
@@ -286,7 +331,7 @@ public class OpennessWorkerClientIntegrationTests
     }
 
     [Fact]
-    public async Task HangingWrite_ReturnsWorkerTimeout_AndIsIssuedOnce()
+    public async Task HangingSafeRead_ReturnsWorkerTimeout_AndIsIssuedOnce()
     {
         using var client = CreateClient(requestTimeout: TimeSpan.FromSeconds(2));
 
@@ -298,7 +343,7 @@ public class OpennessWorkerClientIntegrationTests
 
         Assert.False(timedOut.Success);
         Assert.Equal(WorkerFailureCategories.WorkerTimeout, timedOut.FailureCategory);
-        Assert.Equal(InspectStateBeforeRetryGuidance, timedOut.Error);
+        Assert.Equal(SafeReadTimeout, timedOut.Error);
         Assert.True(recovered.Success);
         // A fresh process restarts its request counter — proves the worker was restarted for
         // the NEXT call only, never replayed for the one that timed out.
@@ -310,7 +355,7 @@ public class OpennessWorkerClientIntegrationTests
     [InlineData("crash")]
     [InlineData("malformed")]
     [InlineData("null-response")]
-    public async Task UncertainOutcome_IssuesFailedWriteOnce_ThenRestartedWorkerServesTheNextRequests(string scenario)
+    public async Task UncertainSafeRead_IssuesFailedRequestOnce_ThenRestartedWorkerServesTheNextRequests(string scenario)
     {
         using var client = CreateClient(requestTimeout: TimeSpan.FromSeconds(2));
 
@@ -319,7 +364,9 @@ public class OpennessWorkerClientIntegrationTests
         Assert.Contains(
             failed.FailureCategory,
             new[] { WorkerFailureCategories.WorkerTimeout, WorkerFailureCategories.WorkerCrashed });
-        Assert.Equal(InspectStateBeforeRetryGuidance, failed.Error);
+        Assert.Equal(
+            scenario == "hang" ? SafeReadTimeout : SafeReadCrash,
+            failed.Error);
 
         // The failed write was issued exactly once (no internal retry loop). A fresh worker
         // process serves the next request - seq resets to 1, proving the timed-out/lost request
@@ -338,7 +385,7 @@ public class OpennessWorkerClientIntegrationTests
     [InlineData("crash")]
     [InlineData("malformed")]
     [InlineData("null-response")]
-    public async Task LostWrite_ReturnsWorkerCrashed_AndIsIssuedOnce(string scenario)
+    public async Task LostSafeRead_ReturnsWorkerCrashed_AndIsIssuedOnce(string scenario)
     {
         using var client = CreateClient();
 
@@ -347,11 +394,123 @@ public class OpennessWorkerClientIntegrationTests
 
         Assert.False(lost.Success);
         Assert.Equal(WorkerFailureCategories.WorkerCrashed, lost.FailureCategory);
-        Assert.Equal(InspectStateBeforeRetryGuidance, lost.Error);
+        Assert.Equal(SafeReadCrash, lost.Error);
         Assert.True(recovered.Success);
         // A fresh process restarts its request counter — proves the crashed/lost worker was
         // restarted for the NEXT call only, never replayed for the one that was lost.
         Assert.Equal("{\"seq\":1}", recovered.Payload);
+    }
+
+    [Fact]
+    public async Task ExistingSafeReadTimeout_UsesSafeGuidance_InvalidatesBinding_AndDoesNotRetry()
+    {
+        var binding = new ProjectSessionBinding(null);
+        using var client = CreateClient(requestTimeout: TimeSpan.FromSeconds(2), binding: binding);
+        await BindVerifiedAsync(client, binding);
+
+        var result = await InvokeRawAsync(
+            client,
+            new WorkerRequest { Method = "browse_project_tree", ProjectDirectory = "hang" });
+
+        Assert.False(result.Success);
+        Assert.Equal(WorkerFailureCategories.WorkerTimeout, result.FailureCategory);
+        Assert.Equal(SafeReadTimeout, result.Error);
+        Assert.Equal(ProjectBindingSnapshot.InvalidatedState, binding.BindingState);
+        await AssertWorkerRestartedForNextCallerAsync(client);
+    }
+
+    [Fact]
+    public async Task V3SnapshotCrash_UsesSafeGuidance_InvalidatesBinding_AndDoesNotRetry()
+    {
+        var binding = new ProjectSessionBinding(null);
+        using var client = CreateClient(binding: binding);
+        await BindVerifiedAsync(client, binding);
+
+        var result = await InvokeRawAsync(
+            client,
+            new WorkerRequest
+            {
+                Method = "browse_project_tree_v3_snapshot",
+                ProjectDirectory = "crash"
+            });
+
+        Assert.False(result.Success);
+        Assert.Equal(WorkerFailureCategories.WorkerCrashed, result.FailureCategory);
+        Assert.Equal(SafeReadCrash, result.Error);
+        Assert.Equal(ProjectBindingSnapshot.InvalidatedState, binding.BindingState);
+        await AssertWorkerRestartedForNextCallerAsync(client);
+    }
+
+    [Fact]
+    public async Task StateAffectingTimeout_UsesUncertainStateGuidance_InvalidatesBinding_AndDoesNotRetry()
+    {
+        var binding = new ProjectSessionBinding(null);
+        using var client = CreateClient(requestTimeout: TimeSpan.FromSeconds(2), binding: binding);
+        await BindVerifiedAsync(client, binding);
+
+        var result = await InvokeRawAsync(
+            client,
+            new WorkerRequest
+            {
+                Method = "open_project",
+                ProjectPath = "hang"
+            });
+
+        Assert.False(result.Success);
+        Assert.Equal(WorkerFailureCategories.WorkerTimeout, result.FailureCategory);
+        Assert.Equal(StateAffectingTimeout, result.Error);
+        Assert.Equal(ProjectBindingSnapshot.InvalidatedState, binding.BindingState);
+        await AssertWorkerRestartedForNextCallerAsync(client);
+    }
+
+    [Fact]
+    public async Task StateAffectingCrash_UsesUncertainStateGuidance_InvalidatesBinding_AndDoesNotRetry()
+    {
+        var binding = new ProjectSessionBinding(null);
+        using var client = CreateClient(binding: binding);
+        await BindVerifiedAsync(client, binding);
+
+        var result = await InvokeRawAsync(
+            client,
+            new WorkerRequest
+            {
+                Method = "open_project",
+                ProjectPath = "crash"
+            });
+
+        Assert.False(result.Success);
+        Assert.Equal(WorkerFailureCategories.WorkerCrashed, result.FailureCategory);
+        Assert.Equal(StateAffectingCrash, result.Error);
+        Assert.Equal(ProjectBindingSnapshot.InvalidatedState, binding.BindingState);
+        await AssertWorkerRestartedForNextCallerAsync(client);
+    }
+
+    [Fact]
+    public async Task UnknownMethodAtTimeout_UsesUncertainStateGuidance_InvalidatesBinding_AndDoesNotRetry()
+    {
+        var binding = new ProjectSessionBinding(null);
+        using var client = CreateClient(requestTimeout: TimeSpan.FromSeconds(2), binding: binding);
+        await BindVerifiedAsync(client, binding);
+
+        var request = new WorkerRequest
+        {
+            Method = "browse_project_tree",
+            ProjectDirectory = "hang"
+        };
+        var pendingResult = InvokeRawAsync(
+            client,
+            request);
+        // The persistent transport is already started by BindVerifiedAsync. ExchangeAsync
+        // serializes the request synchronously before InvokeRawAsync returns its pending timeout,
+        // so the FakeWorker receives the safe read while the catch observes the unknown method.
+        request.Method = "unknown_method";
+        var result = await pendingResult;
+
+        Assert.False(result.Success);
+        Assert.Equal(WorkerFailureCategories.WorkerTimeout, result.FailureCategory);
+        Assert.Equal(StateAffectingTimeout, result.Error);
+        Assert.Equal(ProjectBindingSnapshot.InvalidatedState, binding.BindingState);
+        await AssertWorkerRestartedForNextCallerAsync(client);
     }
 
     [Fact]

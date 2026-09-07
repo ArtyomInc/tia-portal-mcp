@@ -62,7 +62,7 @@ public class ProjectStandaloneToolTests
     }
 
     [Fact]
-    public async Task BrowseProjectTree_ForwardsEveryArgument()
+    public async Task BrowseProjectTree_ContinuesToForwardItsLegacyV2RequestShape()
     {
         using var client = CreateClient(FakeWorkerLocator.Locate());
 
@@ -77,6 +77,7 @@ public class ProjectStandaloneToolTests
         Assert.Equal("echo", request.GetProperty("projectPath").GetString());
         Assert.Equal(2, request.GetProperty("depth").GetInt32());
         Assert.Equal("PLC_1/Blocks", request.GetProperty("startPath").GetString());
+        Assert.Equal(JsonValueKind.Null, request.GetProperty("startSelector").ValueKind);
     }
 
     [Fact]
