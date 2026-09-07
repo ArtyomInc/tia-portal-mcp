@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using TiaMcpServer.Contracts;
 using TiaMcpServer.Cursors;
 using TiaMcpServer.Json;
@@ -116,11 +117,18 @@ public class HardwarePageCursorCodecTests
     public void Decode_RejectsCorrectlySignedPayloadWithNoncanonicalPropertyOrder()
     {
         var canonical = ValidPayloadJson();
-        const string StatePrefix = "\"state\":{";
-        var stateStart = canonical.IndexOf(StatePrefix, StringComparison.Ordinal) + StatePrefix.Length;
-        var withoutOffset = canonical.Replace(",\"offset\":3}}", "}}", StringComparison.Ordinal);
-        var noncanonical = withoutOffset.Insert(stateStart, "\"offset\":3,");
+        using var canonicalDocument = JsonDocument.Parse(canonical);
+        var state = canonicalDocument.RootElement.GetProperty("state");
+        var remainingMembers = state.EnumerateObject()
+            .Where(property => property.Name != "offset")
+            .Select(property => JsonSerializer.Serialize(property.Name) + ":" + property.Value.GetRawText());
+        var reorderedState = "{\"offset\":3," + string.Join(",", remainingMembers) + "}";
+        var noncanonical = canonical.Replace(state.GetRawText(), reorderedState, StringComparison.Ordinal);
 
+        using var document = JsonDocument.Parse(noncanonical);
+        Assert.Single(document.RootElement.GetProperty("state").EnumerateObject(), property => property.Name == "offset");
+        Assert.NotEqual(canonical, noncanonical);
+        Assert.Equal(canonical, CanonicalJson.Serialize(document.RootElement));
         AssertInvalidSignedPayload(noncanonical);
     }
 
