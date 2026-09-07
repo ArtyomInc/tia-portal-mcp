@@ -19,10 +19,16 @@ public static class StructuredToolResult
     public static CallToolResult Create<TResponse>(TResponse response, bool isError)
     {
         var text = CanonicalJson.Serialize(response);
-        using var document = JsonDocument.Parse(text);
+        return CreateCanonical(text, isError);
+    }
+
+    internal static CallToolResult CreateCanonical(string canonicalText, bool isError)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(canonicalText);
+        using var document = JsonDocument.Parse(canonicalText);
         return new CallToolResult
         {
-            Content = new List<ContentBlock> { new TextContentBlock { Text = text } },
+            Content = new List<ContentBlock> { new TextContentBlock { Text = canonicalText } },
             StructuredContent = document.RootElement.Clone(),
             IsError = isError
         };
