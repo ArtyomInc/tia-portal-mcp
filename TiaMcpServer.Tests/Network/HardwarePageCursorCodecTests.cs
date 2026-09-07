@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using TiaMcpServer.Contracts;
+using TiaMcpServer.Cursors;
 using TiaMcpServer.Json;
 using TiaMcpServer.Network;
 using Xunit;
@@ -160,6 +161,29 @@ public class HardwarePageCursorCodecTests
         AssertCategory(
             WorkerFailureCategories.InvalidCursor,
             () => new HardwarePageCursorCodec(OtherKey).Decode(cursor));
+    }
+
+    [Fact]
+    public void Decode_ForeignProcessStillMapsToHardwareInvalidCursor()
+    {
+        using var issuer = new AuthenticatedCursorProtector(TestKey, "process-a");
+        using var reader = new AuthenticatedCursorProtector(OtherKey, "process-b");
+        var cursor = new HardwarePageCursorCodec(issuer).Encode(State());
+
+        AssertCategory(
+            WorkerFailureCategories.InvalidCursor,
+            () => new HardwarePageCursorCodec(reader).Decode(cursor));
+    }
+
+    [Fact]
+    public void Decode_WrongPurposeStillMapsToHardwareInvalidCursor()
+    {
+        using var protector = new AuthenticatedCursorProtector(TestKey, "process-a");
+        var cursor = protector.Protect("project-tree", State());
+
+        AssertCategory(
+            WorkerFailureCategories.InvalidCursor,
+            () => new HardwarePageCursorCodec(protector).Decode(cursor));
     }
 
     [Fact]
