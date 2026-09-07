@@ -464,6 +464,28 @@ public class OpennessWorkerClientIntegrationTests
     }
 
     [Fact]
+    public async Task StateAffectingCrash_UsesUncertainStateGuidance_InvalidatesBinding_AndDoesNotRetry()
+    {
+        var binding = new ProjectSessionBinding(null);
+        using var client = CreateClient(binding: binding);
+        await BindVerifiedAsync(client, binding);
+
+        var result = await InvokeRawAsync(
+            client,
+            new WorkerRequest
+            {
+                Method = "open_project",
+                ProjectPath = "crash"
+            });
+
+        Assert.False(result.Success);
+        Assert.Equal(WorkerFailureCategories.WorkerCrashed, result.FailureCategory);
+        Assert.Equal(StateAffectingCrash, result.Error);
+        Assert.Equal(ProjectBindingSnapshot.InvalidatedState, binding.BindingState);
+        await AssertWorkerRestartedForNextCallerAsync(client);
+    }
+
+    [Fact]
     public async Task UnknownMethodAtTimeout_UsesUncertainStateGuidance_InvalidatesBinding_AndDoesNotRetry()
     {
         var binding = new ProjectSessionBinding(null);
@@ -478,7 +500,9 @@ public class OpennessWorkerClientIntegrationTests
         var pendingResult = InvokeRawAsync(
             client,
             request);
-        await Task.Delay(TimeSpan.FromMilliseconds(100));
+        // The persistent transport is already started by BindVerifiedAsync. ExchangeAsync
+        // serializes the request synchronously before InvokeRawAsync returns its pending timeout,
+        // so the FakeWorker receives the safe read while the catch observes the unknown method.
         request.Method = "unknown_method";
         var result = await pendingResult;
 
