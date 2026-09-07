@@ -87,6 +87,20 @@ public class ProjectTraversalSourceContractTests
         Assert.DoesNotContain("HeaderAuthor", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void SelectedDevice_IsResolvedBeforeAnyPlcSoftwareDiscovery()
+    {
+        var source = ReadRepositorySource(
+            "TiaMcpServer.OpennessWorker", "Openness", "ProjectTreeSnapshotWalker.cs");
+        var enumerate = source.IndexOf("ProjectDeviceEnumerator.Enumerate(project)", StringComparison.Ordinal);
+        var select = source.IndexOf("ProjectTreeDeviceSelector.Select", StringComparison.Ordinal);
+        var walk = source.IndexOf("WalkDevice(selectedDevice)", StringComparison.Ordinal);
+
+        Assert.True(enumerate >= 0 && select > enumerate && walk > select);
+        Assert.DoesNotContain("[\"Path\"]", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("CombinePath", source, StringComparison.Ordinal);
+    }
+
     private static string ReadRepositorySource(params string[] pathSegments)
     {
         var current = AppContext.BaseDirectory;

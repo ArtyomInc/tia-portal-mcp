@@ -10,6 +10,13 @@ namespace TiaMcpServer.Tests.Worker;
 public sealed class WorkerProtocolHandshakeTests
 {
     [Fact]
+    public void ProtocolRequiresTypedProjectTreeCapability()
+    {
+        Assert.Equal("project-tree-v3", WorkerProtocol.Version);
+        Assert.Contains("typed-project-tree-selector", WorkerProtocol.RequiredCapabilities);
+    }
+
+    [Fact]
     public async Task CurrentFakeWorker_CompletesHelloBeforeFirstEngineeringRequest()
     {
         using var transport = new PersistentWorkerTransport(
