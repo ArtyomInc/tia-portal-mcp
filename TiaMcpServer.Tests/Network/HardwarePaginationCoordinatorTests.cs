@@ -311,7 +311,8 @@ public class HardwarePaginationCoordinatorTests
             SnapshotHash,
             Offset: offset));
 
-    private static HardwarePageCursorCodec Codec() => new(new byte[32]);
+    private static HardwarePageCursorCodec Codec()
+        => new(new AuthenticatedCursorProtector(new byte[32], "hardware-pagination-tests"));
 
     private static string QueryHash(NetworkOperationRequest operation)
         => HardwarePageEvidence.CreateQueryHash(

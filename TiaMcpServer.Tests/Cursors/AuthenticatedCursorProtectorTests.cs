@@ -187,15 +187,14 @@ public class AuthenticatedCursorProtectorTests
 
     private static string ChangeUnusedPadBits(string value)
     {
-        var replacement = value[^1] switch
+        const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        var index = Alphabet.IndexOf(value[^1], StringComparison.Ordinal);
+        if (index < 0 || index % 4 != 0 || index == Alphabet.Length - 1)
         {
-            'A' => 'B',
-            'Q' => 'R',
-            'g' => 'h',
-            'w' => 'x',
-            _ => throw new InvalidOperationException("A 32-byte value must end in canonical two-bit base64 data."),
-        };
-        return value[..^1] + replacement;
+            throw new InvalidOperationException("A 32-byte value must end in canonical base64 data with two zero pad bits.");
+        }
+
+        return value[..^1] + Alphabet[index + 1];
     }
 
     private static string EncodeBase64Url(byte[] bytes)
