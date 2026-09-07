@@ -41,17 +41,23 @@ public sealed class ProjectTreeV3ContractTests
         Assert.Equal("3.0", root.GetProperty("contractVersion").GetString());
         Assert.Equal("succeeded", root.GetProperty("status").GetString());
         Assert.Equal(JsonValueKind.Null, root.GetProperty("failure").ValueKind);
-        Assert.Equal(5, root.EnumerateObject().Count());
+        AssertExactPropertyNames(root, "contractVersion", "status", "result", "failure", "warnings");
         Assert.Empty(root.GetProperty("warnings").EnumerateArray());
 
         var result = root.GetProperty("result");
-        Assert.Equal(4, result.EnumerateObject().Count());
-        Assert.Equal(JsonValueKind.Null, result.GetProperty("query").GetProperty("startSelector").ValueKind);
-        Assert.Equal(JsonValueKind.Null, result.GetProperty("query").GetProperty("depth").ValueKind);
-        Assert.Equal(JsonValueKind.Null, result.GetProperty("pagination").GetProperty("nextCursor").ValueKind);
+        AssertExactPropertyNames(result, "snapshot", "query", "pagination", "nodes");
+        var snapshot = result.GetProperty("snapshot");
+        AssertExactPropertyNames(snapshot, "snapshotId", "createdAt", "idleExpiresAt", "totalNodes");
+        var query = result.GetProperty("query");
+        AssertExactPropertyNames(query, "projectPath", "startSelector", "depth");
+        Assert.Equal(JsonValueKind.Null, query.GetProperty("startSelector").ValueKind);
+        Assert.Equal(JsonValueKind.Null, query.GetProperty("depth").ValueKind);
+        var pagination = result.GetProperty("pagination");
+        AssertExactPropertyNames(pagination, "offset", "requestedPageSize", "returnedCount", "nextCursor");
+        Assert.Equal(JsonValueKind.Null, pagination.GetProperty("nextCursor").ValueKind);
 
         var node = Assert.Single(result.GetProperty("nodes").EnumerateArray());
-        Assert.Equal(6, node.EnumerateObject().Count());
+        AssertExactPropertyNames(node, "nodeId", "parentNodeId", "sequence", "name", "nodeType", "details");
         Assert.Equal(JsonValueKind.Null, node.GetProperty("parentNodeId").ValueKind);
         Assert.Empty(node.GetProperty("details").EnumerateObject());
     }
@@ -68,19 +74,34 @@ public sealed class ProjectTreeV3ContractTests
 
         using var document = JsonDocument.Parse(CanonicalJson.Serialize(response));
 
+        AssertExactPropertyNames(document.RootElement, "contractVersion", "status", "result", "failure", "warnings");
         Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("result").ValueKind);
-        Assert.Equal(WorkerFailureCategories.InvalidSelector,
-            document.RootElement.GetProperty("failure").GetProperty("category").GetString());
+        var failure = document.RootElement.GetProperty("failure");
+        AssertExactPropertyNames(failure, "category", "message");
+        Assert.Equal(WorkerFailureCategories.InvalidSelector, failure.GetProperty("category").GetString());
     }
 
-    [Fact]
-    public void SelectorSegment_RejectsUnknownMembers()
+    [Theory]
+    [InlineData("startPath")]
+    [InlineData("deviceName")]
+    [InlineData("plcName")]
+    public void SelectorSegment_RejectsUnknownMembers(string unknownProperty)
     {
-        const string json = """{"nodeType":"Device","name":"PLC_1","startPath":"legacy"}""";
+        var json = $"{{\"nodeType\":\"Device\",\"name\":\"PLC_1\",\"{unknownProperty}\":\"legacy\"}}";
 
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<ProjectTreeSelectorSegment>(json, options));
+    }
+
+    [Fact]
+    public void SelectorSegment_SerializesWithExactlyNodeTypeAndName()
+    {
+        var segment = new ProjectTreeSelectorSegment { NodeType = ProjectTreeNodeTypes.Device, Name = "PLC_1" };
+
+        using var document = JsonDocument.Parse(CanonicalJson.Serialize(segment));
+
+        AssertExactPropertyNames(document.RootElement, "nodeType", "name");
     }
 
     [Fact]
@@ -99,6 +120,7 @@ public sealed class ProjectTreeV3ContractTests
 
         Assert.Equal("PLC_1/Blocks", document.RootElement.GetProperty("startPath").GetString());
         var selector = Assert.Single(document.RootElement.GetProperty("startSelector").EnumerateArray());
+        AssertExactPropertyNames(selector, "nodeType", "name");
         Assert.Equal(ProjectTreeNodeTypes.Device, selector.GetProperty("nodeType").GetString());
         Assert.Equal("PLC_1", selector.GetProperty("name").GetString());
     }
@@ -144,5 +166,14 @@ public sealed class ProjectTreeV3ContractTests
         Assert.Equal(
             expected.OrderBy(value => value, StringComparer.Ordinal),
             ProjectTreeNodeTypes.All.OrderBy(value => value, StringComparer.Ordinal));
+    }
+
+    private static void AssertExactPropertyNames(JsonElement element, params string[] expected)
+    {
+        var actual = element.EnumerateObject()
+            .Select(property => property.Name)
+            .OrderBy(name => name, StringComparer.Ordinal);
+
+        Assert.Equal(expected.OrderBy(name => name, StringComparer.Ordinal), actual);
     }
 }
