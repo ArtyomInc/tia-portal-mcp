@@ -33,9 +33,6 @@ internal sealed class HardwarePageCursorCodec
     {
     }
 
-    internal static HardwarePageCursorCodec CreateProcessScoped()
-        => new(AuthenticatedCursorProtector.CreateProcessScoped());
-
     internal string Encode(HardwarePageCursorState state)
     {
         ArgumentNullException.ThrowIfNull(state);
