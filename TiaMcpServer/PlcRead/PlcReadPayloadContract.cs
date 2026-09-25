@@ -130,18 +130,12 @@ public static class PlcReadPayloadContract
         }
     }
 
-    /// <summary>Values must be JSON scalars or arrays of scalars — never objects.</summary>
+    /// <summary>Values must use the published listing shapes (<see cref="DomainPayloadProjector.IsListingValue"/>).</summary>
     private static void ValidateScalars(Dictionary<string, object?> values, string member)
     {
-        foreach (var value in values.Values)
+        if (!values.Values.All(DomainPayloadProjector.IsListingValue))
         {
-            if (value is JsonElement element
-                && (element.ValueKind == JsonValueKind.Object
-                    || (element.ValueKind == JsonValueKind.Array
-                        && element.EnumerateArray().Any(item => item.ValueKind is JsonValueKind.Object or JsonValueKind.Array))))
-            {
-                throw new JsonException($"'{member}' must hold scalar values.");
-            }
+            throw new JsonException($"'{member}' must hold scalar values.");
         }
     }
 

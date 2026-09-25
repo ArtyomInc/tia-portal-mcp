@@ -25,6 +25,9 @@ internal sealed class FakeObjectNode : IObjectNode
 
     public bool FailAttributes { get; set; }
 
+    /// <summary>Attributes reported as navigable (engineering-object typed) whatever their value.</summary>
+    public HashSet<string> NavigableAttributes { get; } = new(StringComparer.Ordinal);
+
     public int EnumeratedElements { get; private set; }
 
     public FakeObjectNode Add(string composition, params FakeObjectNode[] elements)
@@ -79,7 +82,7 @@ internal sealed class FakeObjectNode : IObjectNode
             pair.Key,
             "readOnly",
             new[] { pair.Value?.GetType().FullName ?? "System.Object" },
-            pair.Value is IObjectNode)).ToList();
+            pair.Value is IObjectNode || NavigableAttributes.Contains(pair.Key))).ToList();
     }
 
     public ObjectFollowResult FollowAttribute(string attributeName) => _attributes[attributeName] switch

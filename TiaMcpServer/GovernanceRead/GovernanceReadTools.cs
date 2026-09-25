@@ -109,7 +109,7 @@ public static class GovernanceReadCatalog
                     throw new JsonException("A governance object path is invalid.");
                 }
 
-                if (item.Values.Values.Any(v => v is JsonElement { ValueKind: JsonValueKind.Object }))
+                if (!item.Values.Values.All(DomainPayloadProjector.IsListingValue))
                 {
                     throw new JsonException("Governance values must be scalars.");
                 }

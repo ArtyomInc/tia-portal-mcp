@@ -136,7 +136,7 @@ public static class LibraryReadPayloadContract
         Require(item.Values, member + ".values");
         Require(item.Unavailable, member + ".unavailable");
         Path(item.ObjectPath, member + ".objectPath");
-        if (item.Values.Values.Any(v => v is JsonElement { ValueKind: JsonValueKind.Object }))
+        if (!item.Values.Values.All(DomainPayloadProjector.IsListingValue))
         {
             throw new JsonException($"'{member}.values' must hold scalar values.");
         }

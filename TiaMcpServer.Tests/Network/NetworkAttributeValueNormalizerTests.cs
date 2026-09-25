@@ -136,9 +136,8 @@ public sealed class NetworkAttributeValueNormalizerTests
         yield return new object[] { float.NaN };
         yield return new object[] { double.PositiveInfinity };
         yield return new object[] { UnsignedEnum.TooLarge };
-        yield return new object[] { new[] { 1, 2 } };
-        yield return new object[] { DateTime.UnixEpoch };
-        yield return new object[] { Guid.NewGuid() };
+        yield return new object[] { new[] { new[] { 1, 2 } } };
+        yield return new object[] { new Uri("https://example.invalid") };
         yield return new object[] { new ThrowingToString() };
     }
 

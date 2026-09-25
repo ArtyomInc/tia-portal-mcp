@@ -2,14 +2,16 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace TiaMcpServer.OpennessWorker.ObjectModel;
 
 /// <summary>
 /// Converts an Openness value into a plain JSON value for domain listings: strings, booleans,
-/// integers, finite numbers, enum symbols, ISO-8601 dates, version strings, and short arrays of
-/// those. Anything else — engineering objects, multilingual texts, structures — is not
-/// representable and is reported by name instead of being rendered through <c>ToString()</c>.
+/// integers, finite numbers, enum symbols, ISO-8601 dates, version strings, colors
+/// (<c>{"hex": "#RRGGBB", "alpha": 255}</c>), multilingual texts (culture → text), and short
+/// arrays of scalars. Anything else — engineering objects, structures — is not representable and
+/// is reported by name instead of being rendered through <c>ToString()</c>.
 /// </summary>
 public static class ObjectScalarNormalizer
 {
@@ -67,6 +69,12 @@ public static class ObjectScalarNormalizer
             case System.IO.FileSystemInfo fileSystemInfo:
                 json = fileSystemInfo.FullName;
                 return true;
+            case not null when RichValueReader.TryReadColor(value, out var hex, out var alpha):
+                json = new Dictionary<string, object?>(StringComparer.Ordinal) { ["hex"] = hex, ["alpha"] = (long)alpha };
+                return true;
+            case not null when RichValueReader.TryReadMultilingualText(value, out var texts):
+                json = texts;
+                return true;
             case IEnumerable sequence when value.GetType().IsArray:
                 return TryNormalizeArray(sequence, out json);
             default:
@@ -116,7 +124,10 @@ public static class ObjectScalarNormalizer
             {
                 foreach (var attribute in node.GetAttributes())
                 {
-                    if (!attribute.Navigable && !string.Equals(attribute.Access, "writeOnly", StringComparison.Ordinal))
+                    // A multilingual text is an engineering object, but it has a plain JSON shape.
+                    var listable = !attribute.Navigable
+                        || attribute.SupportedTypes.Contains(RichValueReader.MultilingualTextTypeName, StringComparer.Ordinal);
+                    if (listable && !string.Equals(attribute.Access, "writeOnly", StringComparison.Ordinal))
                     {
                         declared.Add(attribute.Name);
                     }

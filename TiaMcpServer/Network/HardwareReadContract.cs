@@ -71,12 +71,9 @@ internal static class HardwareReadContract
             Require(port.Values, "ports[].values");
             Require(port.Partners, "ports[].partners");
             ValidatePath(port.ObjectPath, "ports[].objectPath");
-            foreach (var value2 in port.Values.Values)
+            if (!port.Values.Values.All(DomainPayloadProjector.IsListingValue))
             {
-                if (value2 is JsonElement { ValueKind: JsonValueKind.Object })
-                {
-                    throw new JsonException("Port values must be scalars.");
-                }
+                throw new JsonException("Port values must be scalars, colors, texts, or arrays of those.");
             }
 
             port.Partners.ForEach(partner => Require(partner?.ItemPath, "ports[].partners[].itemPath"));

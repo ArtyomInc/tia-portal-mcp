@@ -15,7 +15,7 @@ one HMI. HMIs are found in ungrouped and grouped devices at any device-item dept
 | --- | --- | --- | --- |
 | `list_hmis` | ✓ | ✓ | `hmis[]`: `name`, `runtime`, `deviceName`, `deviceGroupPath`, `objectPath` |
 | `list_screens` | Screens and screen groups (`ScreenNumber`, `Width`, `Height`, `Enabled`) | Screens and folders | Listing |
-| `list_screen_items` (`screen`, `groupPath?`) | Widgets with every scalar property | `capability_unavailable` (export the screen) | Listing with `target` = the screen |
+| `list_screen_items` (`screen`, `groupPath?`) | Widgets with every plain-valued property, including colors (`{"hex", "alpha"}`) and multilingual texts (`Text`, `ToolTipText`) | `capability_unavailable` (export the screen) | Listing with `target` = the screen |
 | `read_screen_scripts` (`screen`, `groupPath?`) | JavaScript of screen and item events, property events, and script dynamizations | `capability_unavailable` | `scripts[]`: `owner`, `kind`, `trigger`, `scriptCode`, `globalDefinitionAreaScriptCode`, `objectPath` |
 | `list_hmi_tags` | Tags with `TagTableName`, `DataType`, `Connection`, `PlcName`, `PlcTag`, `Address`, `AccessMode`, … | Tags grouped by tag table | Listing |
 | `list_hmi_connections` | ✓ | ✓ | Listing |

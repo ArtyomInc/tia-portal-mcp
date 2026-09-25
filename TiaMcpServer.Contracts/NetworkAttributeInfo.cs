@@ -51,13 +51,18 @@ public sealed class NetworkAttributeValueInfo
 {
     /// <summary>
     /// Value kind discriminator. One of <c>null</c>, <c>string</c>, <c>boolean</c>,
-    /// <c>integer</c>, <c>number</c>, or <c>enum</c>.
+    /// <c>integer</c>, <c>number</c>, <c>enum</c>, <c>dateTime</c>, <c>duration</c>,
+    /// <c>color</c>, <c>multilingualText</c>, or <c>array</c>.
     /// </summary>
     public string Kind { get; set; } = string.Empty;
 
     /// <summary>
-    /// The value itself: null, a JSON string, boolean, integer, number, or a
-    /// <see cref="NetworkEnumValueInfo"/> object.
+    /// The value itself: null, a JSON string, boolean, integer, number, a
+    /// <see cref="NetworkEnumValueInfo"/> object, an ISO-8601 string (<c>dateTime</c>), a
+    /// constant-format <c>[-][d.]hh:mm:ss[.fffffff]</c> string (<c>duration</c>), a
+    /// <see cref="NetworkColorValueInfo"/> object, a culture-name → text object
+    /// (<c>multilingualText</c>), or a list of scalar <see cref="NetworkAttributeValueInfo"/>
+    /// items (<c>array</c>, never nested).
     /// </summary>
     public object? Value { get; set; }
 
@@ -78,6 +83,19 @@ public sealed class NetworkEnumValueInfo
 
     /// <summary>Underlying integer value of the enumeration member.</summary>
     public long NumericValue { get; set; }
+}
+
+/// <summary>
+/// A color value returned as part of a <see cref="NetworkAttributeValueInfo"/> of kind
+/// <c>color</c>.
+/// </summary>
+public sealed class NetworkColorValueInfo
+{
+    /// <summary>Red, green, and blue channels as <c>#RRGGBB</c> (upper-case hex).</summary>
+    public string Hex { get; set; } = string.Empty;
+
+    /// <summary>Alpha channel, 0 (transparent) to 255 (opaque).</summary>
+    public int Alpha { get; set; }
 }
 
 /// <summary>

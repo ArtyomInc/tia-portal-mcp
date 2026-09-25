@@ -73,9 +73,19 @@ the first: a different digest means the object changed between windows. Objects 
 
 ### Attribute values
 
-Values are `null`, `string`, `boolean`, `integer`, `number`, or `enum`. Other CLR values —
-engineering objects, `MultilingualText`, `DateTime`, arrays — are reported as `unrepresentable`
-with their CLR type; object-valued ones are reachable with an `attribute` step.
+`read_object_attributes` returns typed values with the same kinds as `inspect_network_object`:
+`null`, `string`, `boolean`, `integer`, `number`, `enum`, `dateTime`, `duration`, `color`
+(`{hex, alpha}`), `multilingualText` (culture → text), and `array` (scalar items, at most 100;
+see [Network operations](NETWORK_OPERATIONS_SUMMARY.md) for the full table). Other CLR values —
+engineering objects, structures, nested arrays — are reported as `unrepresentable` with their CLR
+type; object-valued ones are reachable with an `attribute` step. An attribute whose declared
+supported type Openness cannot resolve (a null `SupportedTypes` entry) keeps its other types and
+is still read.
+
+Domain listings (`plc_read`, `hmi_read`, `library_read`, `governance_read`, and the
+`network_read` hardware operations) carry plain JSON values: dates and durations as strings,
+colors as `{"hex": "#RRGGBB", "alpha": 255}`, multilingual texts as a culture → text object, and
+short scalar arrays as JSON arrays.
 
 ## Boundaries
 

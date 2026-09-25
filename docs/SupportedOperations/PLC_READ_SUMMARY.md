@@ -41,8 +41,10 @@ is `{ name, kind, typeName, groupPath, objectPath, values, unavailable }`:
   (system block groups included).
 - `objectPath` addresses the object for `object_read`, so any attribute not in `values` is one call
   away.
-- `values` holds the documented attributes the object declares, as JSON scalars: enums as their
-  symbol, dates as ISO-8601 strings, versions as strings. `unavailable` names declared attributes
+- `values` holds the documented attributes the object declares, as plain JSON: enums as their
+  symbol, dates as ISO-8601 strings, versions as strings, colors as `{"hex", "alpha"}`,
+  multilingual texts as a culture → text object, and short scalar arrays (see
+  [Object read](OBJECT_READ_SUMMARY.md#attribute-values)). `unavailable` names declared attributes
   that could not be read or represented.
 
 | Listing | Documented values |

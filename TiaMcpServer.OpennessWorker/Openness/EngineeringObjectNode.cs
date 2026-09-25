@@ -80,11 +80,11 @@ internal sealed class EngineeringObjectNode : IObjectNode
         var attributes = EngineeringObject.GetAttributeInfos()
             .Select(info =>
             {
-                var supportedTypes = info.SupportedTypes ?? (IEnumerable<Type>)Array.Empty<Type>();
+                var supportedTypes = SupportedTypeList.Resolved(info.SupportedTypes);
                 return new ObjectAttributeDescriptor(
                     info.Name,
                     Access(info.AccessMode),
-                    supportedTypes.Select(type => type.FullName ?? type.Name).ToList(),
+                    SupportedTypeList.Names(supportedTypes),
                     supportedTypes.Any(type => typeof(IEngineeringObject).IsAssignableFrom(type)));
             })
             .ToList();

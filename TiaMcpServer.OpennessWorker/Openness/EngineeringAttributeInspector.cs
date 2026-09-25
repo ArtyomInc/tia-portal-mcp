@@ -14,7 +14,7 @@ public static class EngineeringAttributeInspector
                 {
                     ReadName = () => info.Name,
                     ReadAccess = () => Access(info.AccessMode),
-                    ReadSupportedTypes = () => info.SupportedTypes.Select(type =>
+                    ReadSupportedTypes = () => ObjectModel.SupportedTypeList.Resolved(info.SupportedTypes).Select(type =>
                         new NetworkAttributeSupportedTypeMetadata
                         {
                             ReadName = () => type.FullName ?? type.Name,

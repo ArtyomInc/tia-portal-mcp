@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using System.Text.Json;
 using TiaMcpServer.Contracts;
 using TiaMcpServer.Json;
@@ -526,7 +528,9 @@ public static class NetworkPayloadContract
 
     private static readonly IReadOnlySet<string> ValidAttributeValueKind =
         new HashSet<string>(StringComparer.Ordinal)
-            { "null", "string", "boolean", "integer", "number", "enum" };
+            { "null", "string", "boolean", "integer", "number", "enum", "dateTime", "duration", "color", "multilingualText", "array" };
+
+    private const int MaxAttributeArrayLength = 100;
 
     private static void ValidateObjectInspection(NetworkObjectInspectionInfo value)
     {
@@ -1142,6 +1146,9 @@ public static class NetworkPayloadContract
     }
 
     private static void ValidateAttributeValue(NetworkAttributeValueInfo value, string prefix)
+        => ValidateAttributeValue(value, prefix, allowArray: true);
+
+    private static void ValidateAttributeValue(NetworkAttributeValueInfo value, string prefix, bool allowArray)
     {
         if (string.Equals(value.Kind, "null", StringComparison.Ordinal))
         {
@@ -1167,6 +1174,14 @@ public static class NetworkPayloadContract
             "integer" => element.ValueKind == JsonValueKind.Number && element.TryGetInt64(out _),
             "number" => element.ValueKind == JsonValueKind.Number && element.TryGetDouble(out _),
             "enum" => ValidateEnumValue(element, prefix),
+            "dateTime" => element.ValueKind == JsonValueKind.String
+                && DateTimeOffset.TryParse(element.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out _),
+            "duration" => element.ValueKind == JsonValueKind.String
+                && TimeSpan.TryParseExact(element.GetString(), "c", CultureInfo.InvariantCulture, out _),
+            "color" => ValidateColorValue(element),
+            "multilingualText" => element.ValueKind == JsonValueKind.Object
+                && element.EnumerateObject().All(text => text.Value.ValueKind == JsonValueKind.String),
+            "array" => allowArray && ValidateArrayValue(element, prefix),
             _ => false,
         };
 
@@ -1213,6 +1228,37 @@ public static class NetworkPayloadContract
                 RequireJsonMembers(value, "attributes[].value", "kind", "value");
             }
         }
+    }
+
+    private static bool ValidateColorValue(JsonElement element)
+        => element.ValueKind == JsonValueKind.Object
+            && element.TryGetProperty("hex", out var hex)
+            && hex.ValueKind == JsonValueKind.String
+            && Regex.IsMatch(hex.GetString()!, "^#[0-9A-F]{6}$")
+            && element.TryGetProperty("alpha", out var alpha)
+            && alpha.TryGetInt32(out var channel)
+            && channel is >= 0 and <= 255;
+
+    private static bool ValidateArrayValue(JsonElement element, string prefix)
+    {
+        if (element.ValueKind != JsonValueKind.Array || element.GetArrayLength() > MaxAttributeArrayLength)
+        {
+            return false;
+        }
+
+        foreach (var itemElement in element.EnumerateArray())
+        {
+            var item = CanonicalJson.Deserialize<NetworkAttributeValueInfo>(itemElement.GetRawText());
+            RequireNotNull(item, $"{prefix}.value.value[]");
+            if (string.IsNullOrEmpty(item.Kind) || !ValidAttributeValueKind.Contains(item.Kind) || item.Kind == "array")
+            {
+                return false;
+            }
+
+            ValidateAttributeValue(item, $"{prefix}.value.value[]", allowArray: false);
+        }
+
+        return true;
     }
 
     private static bool ValidateEnumValue(JsonElement element, string prefix)

@@ -74,6 +74,31 @@ public static class DomainPayloadProjector
     public static JsonElement Decode<T>(string payload, Action<T>? validate = null)
         => Json.CanonicalJson.Normalize(payload, validate).Element;
 
+    /// <summary>
+    /// Whether a domain-listing value has one of the published plain shapes: a JSON scalar, a
+    /// color <c>{"hex": "#RRGGBB", "alpha": 0-255}</c>, a multilingual text (an object of culture
+    /// name → string), or an array of those that holds no nested array.
+    /// </summary>
+    public static bool IsListingValue(object? value)
+        => value is not JsonElement element || IsListingElement(element, allowArray: true);
+
+    private static bool IsListingElement(JsonElement element, bool allowArray)
+        => element.ValueKind switch
+        {
+            JsonValueKind.Object => IsColor(element) || element.EnumerateObject().All(text => text.Value.ValueKind == JsonValueKind.String),
+            JsonValueKind.Array => allowArray && element.EnumerateArray().All(item => IsListingElement(item, allowArray: false)),
+            _ => true,
+        };
+
+    private static bool IsColor(JsonElement element)
+        => element.EnumerateObject().Count() == 2
+            && element.TryGetProperty("hex", out var hex)
+            && hex.ValueKind == JsonValueKind.String
+            && System.Text.RegularExpressions.Regex.IsMatch(hex.GetString()!, "^#[0-9A-F]{6}$")
+            && element.TryGetProperty("alpha", out var alpha)
+            && alpha.TryGetInt32(out var channel)
+            && channel is >= 0 and <= 255;
+
     /// <summary>Validator helper: rejects an explicit JSON null in a non-nullable member.</summary>
     public static void RequireNotNull(object? value, string member)
     {

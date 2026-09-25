@@ -109,12 +109,26 @@ ordered `attributes` array, and non-fatal `messages`. Every attribute independen
 - `supportedTypes`: the declared CLR type names in metadata order;
 - `availability`: `available`, `notApplicable`, `unsupported`, `unreadable`, `readFailed`,
   `unrepresentable`, or `unknownAttribute`;
-- `value`: only `null`, `string`, `boolean`, `integer`, `number`, or `enum`; and
+- `value`: a typed `{kind, value, typeName}` object whose kinds are listed below; and
 - `diagnostic`: category, message, and optional CLR type name when a value is unavailable.
 
 An unknown or failed attribute does not fail the inspection and does not suppress later
 attributes. Successfully read CLR null is represented by a value with `kind:"null"`; an arbitrary
 CLR object is `unrepresentable` and is never published through `ToString()`.
+
+| Kind | `value` shape | CLR source |
+| --- | --- | --- |
+| `null` | `null` | a successfully read CLR null |
+| `string` | string | `string`, `char`, `Guid` (`D` format), `Version` |
+| `boolean` | `true` / `false` | `bool` |
+| `integer` | 64-bit integer | integral types (`ulong` above `long.MaxValue` is unrepresentable) |
+| `number` | finite number | `float`, `double`, `decimal` |
+| `enum` | `{typeName, symbol, numericValue}` | any enum |
+| `dateTime` | ISO-8601 round-trip string | `DateTime`, `DateTimeOffset` |
+| `duration` | constant-format string `[-][d.]hh:mm:ss[.fffffff]` | `TimeSpan` |
+| `color` | `{hex: "#RRGGBB", alpha: 0–255}` | `System.Drawing.Color` (WinCC colors) |
+| `multilingualText` | object of culture name → text, e.g. `{"en-US": "Start"}` | `Siemens.Engineering.MultilingualText` |
+| `array` | list of typed items of any kind above except `array`, at most 100 | a one-dimensional array |
 
 ## Hardware configuration pagination
 

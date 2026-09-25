@@ -170,6 +170,23 @@ public static class NetworkAttributeResultBuilder
                 && leftEnum.NumericValue == rightEnum.NumericValue;
         }
 
+        if (left.Value is NetworkColorValueInfo leftColor && right.Value is NetworkColorValueInfo rightColor)
+        {
+            return leftColor.Hex == rightColor.Hex && leftColor.Alpha == rightColor.Alpha;
+        }
+
+        if (left.Value is IReadOnlyDictionary<string, string> leftTexts && right.Value is IReadOnlyDictionary<string, string> rightTexts)
+        {
+            return leftTexts.Count == rightTexts.Count
+                && leftTexts.All(pair => rightTexts.TryGetValue(pair.Key, out var text) && text == pair.Value);
+        }
+
+        if (left.Value is IReadOnlyList<NetworkAttributeValueInfo> leftItems && right.Value is IReadOnlyList<NetworkAttributeValueInfo> rightItems)
+        {
+            return leftItems.Count == rightItems.Count
+                && leftItems.Zip(rightItems, ValuesEqual).All(equal => equal);
+        }
+
         return Equals(left.Value, right.Value);
     }
 

@@ -416,9 +416,12 @@ page. Selectors and cursors are therefore snapshot-scoped evidence, not persiste
 kind-specific fields. `NetworkObjectInspector` supplements them with
 `IEngineeringObject.GetAttributeInfos()` and guarded reads. `NetworkAttributeResultBuilder`
 merges modeled and dynamic metadata while keeping source, access, availability, value, and
-diagnostic independent for every requested name. Public values use only `null`, `string`,
-`boolean`, `integer`, `number`, or `enum`; unsupported CLR objects become `unrepresentable` and
-are never serialized through arbitrary `ToString()` output.
+diagnostic independent for every requested name. Public values use the kinds `null`, `string`,
+`boolean`, `integer`, `number`, `enum`, `dateTime`, `duration`, `color`, `multilingualText`, and
+`array` (scalar items only); `ObjectModel/RichValueReader` recognizes colors and multilingual
+texts by exact CLR name through public properties, so the normalizer stays free of Siemens
+compile-time references. Unsupported CLR objects become `unrepresentable` and are never
+serialized through arbitrary `ToString()` output.
 
 The worker-only `probe_network_object_attributes` method exists solely for the explicitly
 authorized Phase 3 raw-metadata acceptance mode. It is read-only and absent from

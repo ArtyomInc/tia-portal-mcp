@@ -8,6 +8,7 @@ using TiaMcpServer.OpennessWorker.HardwareRead;
 using TiaMcpServer.OpennessWorker.LibraryRead;
 using TiaMcpServer.OpennessWorker.HmiRead;
 using TiaMcpServer.OpennessWorker.GovernanceRead;
+using TiaMcpServer.OpennessWorker.ObjectModel;
 using WorkerTiaPortalSession = TiaMcpServer.OpennessWorker.Openness.TiaPortalSession;
 
 namespace TiaMcpServer.OpennessWorker;
@@ -508,8 +509,7 @@ internal static class Program
         {
             Name = info.Name,
             AccessMode = Enum.GetName(typeof(EngineeringAttributeAccessMode), info.AccessMode) ?? "Unknown",
-            SupportedClrTypeNames = info.SupportedTypes
-                .Select(type => type.FullName ?? type.Name)
+            SupportedClrTypeNames = SupportedTypeList.Names(SupportedTypeList.Resolved(info.SupportedTypes))
                 .OrderBy(typeName => typeName, StringComparer.Ordinal)
                 .ToList(),
             ObservedClrValueType = observedClrValueType,

@@ -34,7 +34,6 @@ Found while delivering the read roadmap
 
 | # | Follow-up | Where | Why |
 |---|-----------|-------|-----|
-| R0.1 | `DateTime`, `TimeSpan`, primitive arrays (`string[]`), and `MultilingualText` attribute values are `unrepresentable`. Decide whether the shared value contract gains ISO-8601 strings, arrays, and per-language texts | `NetworkAttributeValueNormalizer.cs` | Common project and module attributes (`CreationTime`, `InstallationDate`, `PnDnsConfiguration`, comments) are invisible today; the normalizer is shared with `inspect_network_object`, so it is a contract change for both tools |
 | R1.1 | ProDiag supervisions are not listed: `SupervisionProvider` has no attributes or compositions in V21, only methods | `PlcRead/PlcReadBuilder.cs` | Needs a method-level investigation against a project that uses ProDiag |
 | R1.2 | Non-empty technology objects, external sources, Software Units, alarm text lists, and OPC UA interfaces are verified offline only | [R1 acceptance](superpowers/acceptance/reports/2026-09-25-r1-plc-read-live.md) | The live project has none; re-run the listings on a richer project |
 | R2.1 | `compare_hardware` is live-verified only on TIA's refusal path ("Hardware comparison … is not supported" for self and dissimilar pairs) | [R2 acceptance](superpowers/acceptance/reports/2026-09-25-r2-hardware-read-live.md) | Re-run on a project with two compatible stations; consider module-level (device-item) comparison |
@@ -536,3 +535,18 @@ final guarded no-save close/reopen cleanup returned the project to `isModified=F
 The close/open lifecycle operations were cleanup and recovery only, not PR 4 feature acceptance.
 The report does not claim plant or production acceptance, disk project-byte identity, saved-project
 acceptance, or semantic equivalence beyond the exact exported-text checks performed.
+
+## Rich attribute values and null supported types — DONE 2026-09-25 (v2.8.1)
+
+- **Bug:** `EngineeringObjectNode.GetAttributes` dereferenced every `SupportedTypes` entry, and
+  WinCC Unified declares `System.Drawing.Color` attributes with a null entry. The resulting
+  `NullReferenceException` emptied `describe_object` and made `hmi_read list_screen_items` report
+  `unavailable: ["*"]` for every widget. `ObjectModel/SupportedTypeList` now drops null entries;
+  the same guard covers `EngineeringAttributeInspector` and the raw attribute probe.
+- **R0.1 closed:** the shared value contract gains `dateTime`, `duration`, `color`,
+  `multilingualText`, and `array` kinds (`NetworkAttributeValueNormalizer`, validated by
+  `NetworkPayloadContract`); domain listings (`ObjectScalarNormalizer`) render colors and
+  multilingual texts as plain JSON. `Guid` and `Version` are published as strings.
+- Domain listings also include multilingual-text attributes, which Openness types as engineering
+  objects.
+- Tests: `ObjectRead/RichValueTests.cs`; [live acceptance](superpowers/acceptance/reports/2026-09-25-v2.8.1-rich-values-live.md).
