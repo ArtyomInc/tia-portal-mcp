@@ -952,6 +952,37 @@ while ((line = Console.In.ReadLine()) is not null)
             });
             break;
 
+        case "hmi-read":
+            Respond(ReadMethod(line) switch
+            {
+                "list_hmis" => Success(ToCamelCaseJson(new HmiListInfo
+                {
+                    Hmis = { new HmiSummaryInfo { Name = "HMI_RT_1", Runtime = "unified", DeviceName = "HMI_1", ObjectPath = DeviceReferenceFixture("HMI_1", 1).ObjectPath } },
+                })),
+                "read_screen_scripts" => Success(ToCamelCaseJson(new HmiScreenScriptsInfo
+                {
+                    HmiName = "HMI_RT_1",
+                    Screen = DomainObjectFixture(ReadField(line, "plcObjectName") ?? "sMain", "HmiScreen"),
+                    Scripts = { new HmiScriptInfo { Owner = "Button_1", Kind = "event", Trigger = "Tapped", ScriptCode = "HMIRuntime.Trace('hi');", ObjectPath = DeviceReferenceFixture("HMI_1", 1).ObjectPath } },
+                    TotalCount = 1,
+                })),
+                "list_screen_items" => Success(ToCamelCaseJson(new HmiObjectListInfo
+                {
+                    HmiName = "HMI_RT_1",
+                    Target = DomainObjectFixture(ReadField(line, "plcObjectName") ?? "sMain", "HmiScreen"),
+                    Items = { DomainObjectFixture("Button_1", "HmiButton") },
+                    TotalCount = 1,
+                })),
+                var method when method is not null && method.StartsWith("list_", StringComparison.Ordinal) => Success(ToCamelCaseJson(new HmiObjectListInfo
+                {
+                    HmiName = ReadField(line, "hmiName") ?? "HMI_RT_1",
+                    Items = { DomainObjectFixture("sMain", "HmiScreen") },
+                    TotalCount = 1,
+                })),
+                _ => $$"""{"success":false,"error":"unexpected method '{{ReadMethod(line)}}' for hmi-read"}"""
+            });
+            break;
+
         case "object-read-not-found":
             Respond("""{"success":false,"failureCategory":"target_not_found","error":"ObjectPath segment 0: 'Project' declares no composition 'Nope'."}""");
             break;

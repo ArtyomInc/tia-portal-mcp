@@ -16,7 +16,7 @@ The current implementation covers project discovery and lifecycle operations, PL
 
 ## Tools
 
-The server currently exposes 17 tools in read-write mode and 7 tools in read-only mode.
+The server currently exposes 18 tools in read-write mode and 8 tools in read-only mode.
 
 ### Batch operations
 
@@ -63,6 +63,10 @@ Available write operations (for `preview_write_batch` / `apply_write_batch`): `u
 ### Library reads
 
 `library_read` reads the project library and the global libraries already open in TIA Portal, in up to 50 read-only operations: `list_libraries`, `list_library_types`, `read_library_type` (versions with state, dependencies, and dependents), `list_master_copies`, `check_library_updates` (the update-check report), and `find_type_instances` (instances of a type in one PLC). Libraries are never opened, updated, or modified. See [docs/SupportedOperations/LIBRARY_READ_SUMMARY.md](https://github.com/Czarnak/tia-portal-mcp/blob/main/docs/SupportedOperations/LIBRARY_READ_SUMMARY.md).
+
+### HMI reads
+
+`hmi_read` reads WinCC Unified and WinCC Classic configuration in up to 50 read-only operations: `list_hmis`, `list_screens`, `list_screen_items`, `read_screen_scripts` (JavaScript of events and dynamizations), `list_hmi_tags`, `list_hmi_connections`, `list_hmi_alarms`, `list_hmi_logs`, `list_hmi_text_lists`, and `list_hmi_scripts`. A listing a runtime does not expose fails `capability_unavailable`. See [docs/SupportedOperations/HMI_READ_SUMMARY.md](https://github.com/Czarnak/tia-portal-mcp/blob/main/docs/SupportedOperations/HMI_READ_SUMMARY.md).
 
 ### Project tools
 

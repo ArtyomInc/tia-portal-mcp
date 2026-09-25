@@ -432,6 +432,16 @@ public class WorkerRequest
 
     #endregion
 
+    #region HMI reads (R4 hmi_read)
+
+    // Screen selection reuses PlcObjectName/PlcGroupPath, the name filter PlcNameContains, and
+    // paging ObjectPageSize/ObjectCursor.
+
+    /// <summary>Forwarded by: every hmi_read operation except list_hmis (exact HMI software name; null means the only HMI).</summary>
+    public string? HmiName { get; set; }
+
+    #endregion
+
     #region Project lifecycle
 
     /// <summary>Forwarded by: create_project.</summary>

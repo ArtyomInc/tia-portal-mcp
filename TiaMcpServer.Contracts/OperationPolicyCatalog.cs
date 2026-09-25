@@ -128,6 +128,18 @@ public static class OperationPolicyCatalog
             ["check_library_updates"] = OperationCapability.Observe,
             ["find_type_instances"] = OperationCapability.Observe,
 
+            // HMI reads (R4 hmi_read)
+            ["list_hmis"] = OperationCapability.Observe,
+            ["list_screens"] = OperationCapability.Observe,
+            ["list_screen_items"] = OperationCapability.Observe,
+            ["read_screen_scripts"] = OperationCapability.Observe,
+            ["list_hmi_tags"] = OperationCapability.Observe,
+            ["list_hmi_connections"] = OperationCapability.Observe,
+            ["list_hmi_alarms"] = OperationCapability.Observe,
+            ["list_hmi_logs"] = OperationCapability.Observe,
+            ["list_hmi_text_lists"] = OperationCapability.Observe,
+            ["list_hmi_scripts"] = OperationCapability.Observe,
+
             // SafetyRead (read-only safe, but requires a verified expected identity)
             ["read_create_block_safety_snapshot"] = OperationCapability.SafetyRead,
             ["read_create_block_group_safety_snapshot"] = OperationCapability.SafetyRead,

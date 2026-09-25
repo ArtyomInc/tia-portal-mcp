@@ -246,6 +246,8 @@
     <Compile Include="..\TiaMcpServer.OpennessWorker\HardwareRead\*.cs" Link="Linked\HardwareRead\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer\LibraryRead\*.cs" Link="Host\LibraryRead\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer.OpennessWorker\LibraryRead\*.cs" Link="Linked\LibraryRead\%(Filename)%(Extension)" />
+    <Compile Include="..\TiaMcpServer\HmiRead\*.cs" Link="Host\HmiRead\%(Filename)%(Extension)" />
+    <Compile Include="..\TiaMcpServer.OpennessWorker\HmiRead\*.cs" Link="Linked\HmiRead\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer.OpennessWorker\ObjectModel\*.cs" Link="Linked\ObjectModel\%(Filename)%(Extension)" />
   </ItemGroup>
   <Import Project="TestUtilities\WorkerSerializationHarness.targets" />

@@ -47,7 +47,9 @@ Agent-facing build and convention reference lives in [AGENTS.md](../AGENTS.md).
 acceptance reports produced while building features. It is historical process material, not
 current documentation — see its index for what is there and how to read it.
 
-Latest process entries: [R3 library reads (`library_read`) design](superpowers/specs/2026-09-25-r3-library-read-design.md)
+Latest process entries: [R4 HMI reads (`hmi_read`) design](superpowers/specs/2026-09-25-r4-hmi-read-design.md)
+and its [implementation plan](superpowers/plans/2026-09-25-r4-hmi-read.md);
+[R3 library reads (`library_read`) design](superpowers/specs/2026-09-25-r3-library-read-design.md)
 and its [implementation plan](superpowers/plans/2026-09-25-r3-library-read.md);
 [R2 hardware reads design](superpowers/specs/2026-09-25-r2-hardware-read-design.md)
 its [implementation plan](superpowers/plans/2026-09-25-r2-hardware-read.md), and

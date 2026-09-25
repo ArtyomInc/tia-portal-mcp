@@ -180,6 +180,14 @@ internal sealed class EngineeringObjectNode : IObjectNode
         }
     }
 
+    public IObjectNode? ReadObject(string name)
+    {
+        var read = ReadValue(name);
+        return read.Succeeded && read.Value is IEngineeringObject engineeringObject
+            ? new EngineeringObjectNode(engineeringObject)
+            : null;
+    }
+
     public IReadOnlyList<IObjectNode>? ReadObjectList(string name)
     {
         var read = ReadValue(name);

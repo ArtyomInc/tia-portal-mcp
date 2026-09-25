@@ -21,6 +21,7 @@ Design documents, written before implementation.
 
 | Date | Document |
 | --- | --- |
+| 2026-09-25 | [R4 — HMI reads (`hmi_read`)](specs/2026-09-25-r4-hmi-read-design.md) |
 | 2026-09-25 | [R3 — library reads (`library_read`)](specs/2026-09-25-r3-library-read-design.md) |
 | 2026-09-25 | [R2 — hardware reads on `network_read`](specs/2026-09-25-r2-hardware-read-design.md) |
 | 2026-09-25 | [R1 — PLC read domain (`plc_read`)](specs/2026-09-25-r1-plc-read-design.md) |
@@ -44,6 +45,7 @@ Task-level implementation plans derived from the specs above.
 
 | Date | Document |
 | --- | --- |
+| 2026-09-25 | [R4 — HMI reads (`hmi_read`)](plans/2026-09-25-r4-hmi-read.md) |
 | 2026-09-25 | [R3 — library reads (`library_read`)](plans/2026-09-25-r3-library-read.md) |
 | 2026-09-25 | [R2 — hardware reads on `network_read`](plans/2026-09-25-r2-hardware-read.md) |
 | 2026-09-25 | [R1 — PLC read domain (`plc_read`)](plans/2026-09-25-r1-plc-read.md) |

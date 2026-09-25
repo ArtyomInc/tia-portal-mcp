@@ -17,6 +17,7 @@ public static class WorkerProtocol
         "generic-object-read",
         "plc-read",
         "hardware-read",
-        "library-read"
+        "library-read",
+        "hmi-read"
     };
 }

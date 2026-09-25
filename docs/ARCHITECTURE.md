@@ -53,7 +53,7 @@ falling back to another mode.
 
 ### Read-write mode
 
-Read-write mode exposes 17 tools: the seven read-only observation tools plus ten
+Read-write mode exposes 18 tools: the eight read-only observation tools plus ten
 read-write-only tools. It preserves the preview-then-apply safety-token model.
 
 ### Read-only mode
@@ -63,7 +63,7 @@ archives, switches, or closes a project; never compiles; never controls a PLC;
 and never performs project-data mutations. It operates only on a project that
 is already open in the attached TIA Portal instance.
 
-The read-only surface contains exactly seven tools.
+The read-only surface contains exactly eight tools.
 
 A supplied `projectPath` in read-only mode is an assertion. It must identify the
 currently open project; it is never used to open or switch projects.
@@ -78,6 +78,7 @@ Tool registration is explicit and mode-dependent. The host always registers:
 - `ObjectReadTools`
 - `PlcReadTools`
 - `LibraryReadTools`
+- `HmiReadTools`
 
 It registers the following only in read-write mode:
 
@@ -107,6 +108,7 @@ preview-only live V21 evidence are recorded in the
 | `execute_read_batch` | Execute up to 50 validated observation operations. |
 | `network_read` | Execute up to 50 validated network observation operations. |
 | `object_read` | Execute up to 50 generic Openness object reads addressed by an explicit object path. |
+| `hmi_read` | Execute up to 50 WinCC Unified/Classic reads (screens, items, scripts, tags, connections, alarms, logs, lists). |
 | `library_read` | Execute up to 50 reads of the project library and open global libraries (types, versions, master copies, update check, instances). |
 | `plc_read` | Execute up to 50 typed PLC program reads (listings, table entries, TO parameters, fingerprints, checksums, offline comparison). |
 
@@ -553,6 +555,16 @@ paths starting at `GlobalLibraries`) over `IObjectNode`, lists types and master 
 check (`UpdateCheck` in report mode) and the instance search (`LibraryTypeVersion.FindInstances`
 scoped to one `PlcSoftware`) are the only typed Siemens calls, in `Openness/LibraryReadService.cs`.
 The tool never opens, saves, updates, or harmonizes a library.
+
+### R4 `hmi_read`
+
+`hmi_read` is entirely Siemens-free in the worker: `HmiReadBuilder` finds WinCC Unified
+(`HmiSoftware`) and Classic (`HmiTarget`) software through `DeviceWalker`, lists per-runtime
+hierarchies with `GroupTreeLister`, and collects screen scripts from `EventHandlers`,
+`PropertyEventHandlers`, and `Dynamizations` via `IObjectNode.ReadObject` (script objects are typed
+as interfaces). The WinCC assemblies are therefore never referenced at compile time, and the
+reference stubs need no WinCC counterpart. Listings a runtime does not expose fail
+`capability_unavailable`.
 
 ## 8. Write safety
 

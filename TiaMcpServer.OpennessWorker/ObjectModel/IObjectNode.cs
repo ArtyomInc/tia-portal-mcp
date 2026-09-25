@@ -55,6 +55,12 @@ public interface IObjectNode
     /// </summary>
     IReadOnlyList<IObjectNode>? ReadObjectList(string name);
 
+    /// <summary>
+    /// Reads a single engineering-object value by name, even when its declared type is an
+    /// interface (such as an HMI script). Null when undeclared, unreadable, null, or not an object.
+    /// </summary>
+    IObjectNode? ReadObject(string name);
+
     /// <summary>Declared services (full type names), in declaration order.</summary>
     IReadOnlyList<ObjectMemberDescriptor> GetServices();
 
