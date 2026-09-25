@@ -149,7 +149,7 @@ public class HmiReadBuilderTests
         var result = HmiReadBuilder.ReadScreenScripts(project, null, "sMain", null, null, null);
 
         Assert.Equal(
-            new[] { ("sMain", "event", "Monday"), ("Button_1", "event", "Tuesday"), ("Button_1", "dynamization", "BackColor") },
+            new (string, string, string?)[] { ("sMain", "event", "Monday"), ("Button_1", "event", "Tuesday"), ("Button_1", "dynamization", "BackColor") },
             result.Scripts.Select(s => (s.Owner, s.Kind, s.Trigger)));
         Assert.Equal("HMIRuntime.Trace('clicked');", result.Scripts[0].ScriptCode);
         Assert.Equal("return 0xFF0000;", result.Scripts[2].ScriptCode);
