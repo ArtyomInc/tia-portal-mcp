@@ -337,6 +337,43 @@ public class WorkerRequest
 
     #endregion
 
+    #region Generic object read (R0 object_read)
+
+    /// <summary>
+    /// Forwarded by: describe_object, list_object_children, read_object_attributes, export_object.
+    /// One of <see cref="ObjectRoots"/>; null means <see cref="ObjectRoots.Project"/>.
+    /// </summary>
+    public string? ObjectRoot { get; set; }
+
+    /// <summary>
+    /// Forwarded by: describe_object, list_object_children, read_object_attributes, export_object.
+    /// Null or empty addresses the root itself.
+    /// </summary>
+    public List<ObjectPathSegmentInfo>? ObjectPath { get; set; }
+
+    /// <summary>Forwarded by: read_object_attributes (optional; null reads every declared attribute).</summary>
+    public List<string>? ObjectAttributeNames { get; set; }
+
+    /// <summary>Forwarded by: list_object_children (optional composition filter).</summary>
+    public List<string>? ObjectCompositionNames { get; set; }
+
+    /// <summary>Forwarded by: list_object_children (1..200; null means 50).</summary>
+    public int? ObjectPageSize { get; set; }
+
+    /// <summary>Forwarded by: list_object_children (opaque continuation).</summary>
+    public string? ObjectCursor { get; set; }
+
+    /// <summary>Forwarded by: export_object. Values from <see cref="ObjectExportOptionNames"/>.</summary>
+    public List<string>? ObjectExportOptions { get; set; }
+
+    /// <summary>Forwarded by: export_object (character offset of the window; null means 0).</summary>
+    public int? ObjectExportOffset { get; set; }
+
+    /// <summary>Forwarded by: export_object (window length, 1..30,000; null means 16,000).</summary>
+    public int? ObjectExportMaxChars { get; set; }
+
+    #endregion
+
     #region Project lifecycle
 
     /// <summary>Forwarded by: create_project.</summary>

@@ -91,6 +91,12 @@ public static class OperationPolicyCatalog
             ["inspect_network_object"] = OperationCapability.Observe,
             ["probe_network_object_attributes"] = OperationCapability.Observe,
 
+            // Generic object read (R0 object_read)
+            ["describe_object"] = OperationCapability.Observe,
+            ["list_object_children"] = OperationCapability.Observe,
+            ["read_object_attributes"] = OperationCapability.Observe,
+            ["list_capabilities"] = OperationCapability.Observe,
+
             // SafetyRead (read-only safe, but requires a verified expected identity)
             ["read_create_block_safety_snapshot"] = OperationCapability.SafetyRead,
             ["read_create_block_group_safety_snapshot"] = OperationCapability.SafetyRead,
@@ -106,6 +112,7 @@ public static class OperationPolicyCatalog
 
             // TemporaryExport (read-only safe, temporary files with cleanup)
             ["get_block_content"] = OperationCapability.TemporaryExport,
+            ["export_object"] = OperationCapability.TemporaryExport,
 
             // Compile (NOT read-only safe)
             ["compile_check"] = OperationCapability.Compile,

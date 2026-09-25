@@ -16,7 +16,7 @@ The current implementation covers project discovery and lifecycle operations, PL
 
 ## Tools
 
-The server currently exposes 14 tools in read-write mode and 4 tools in read-only mode.
+The server currently exposes 15 tools in read-write mode and 5 tools in read-only mode.
 
 ### Batch operations
 
@@ -51,6 +51,10 @@ Available write operations (for `preview_write_batch` / `apply_write_batch`): `u
 Large hardware reads can opt into cursor pagination with `pageSize` (`1..200`) or `cursor`. Pages count devices first and then subnets in one stable sequence while keeping the two public arrays separate; canonical size projection may return fewer complete entities than requested. Follow `pagination.nextCursor` until it is absent/null and keep the project, filters, and detail flags unchanged. Requests with neither field retain the byte-for-byte unpaged contract. Cursors are process-local and cannot survive a host restart. See the [Network operations reference](https://github.com/Czarnak/tia-portal-mcp/blob/main/docs/SupportedOperations/NETWORK_OPERATIONS_SUMMARY.md#hardware-configuration-pagination) for recovery and omission semantics.
 
 Available write operations (for `preview_write_batch` / `apply_write_batch`): `update_block_logic`, `update_type_content`, `create_block` / `delete_block`, `create_block_group` / `delete_block_group`, `create_tag_table` / `delete_tag_table`, `create_tag` / `update_tag` / `delete_tag`, `create_user_constant` / `update_user_constant` / `delete_user_constant`, `add_network_device`, `configure_network_device`, `start_plc` / `stop_plc`.
+
+### Generic object reads
+
+`object_read` reaches any TIA Portal Openness object of the open project that no dedicated tool covers — module parameters, technology objects, HMI screens, subnet or device properties — through an explicit, evidence-checked `objectPath`. It runs up to 50 read-only operations: `describe_object` (compositions, attributes, services, exportability), `list_object_children` (paged children, each with the exact `objectPath` to send back), `read_object_attributes` (typed values), `export_object` (SimaticML in verifiable character windows), and `list_capabilities` (installed TIA products and optional Openness assemblies). A stale, ambiguous, or unknown path step fails explicitly and never resolves to another object; online, download, and upload services and other open projects are out of reach. It is available in both access modes. See [docs/SupportedOperations/OBJECT_READ_SUMMARY.md](https://github.com/Czarnak/tia-portal-mcp/blob/main/docs/SupportedOperations/OBJECT_READ_SUMMARY.md).
 
 ### Project tools
 

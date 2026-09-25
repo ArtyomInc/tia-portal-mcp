@@ -85,6 +85,12 @@ public static class WorkerFailureCategories
     /// <summary>Required project-tree result metadata cannot fit within the response character limit.</summary>
     public const string ResultMetadataTooLarge = "result_metadata_too_large";
 
+    /// <summary>
+    /// The requested object or API belongs to an optional TIA Portal product or Openness assembly
+    /// that is not installed, not licensed, or not loadable in this worker.
+    /// </summary>
+    public const string CapabilityUnavailable = "capability_unavailable";
+
     private static readonly HashSet<string> Known = new(StringComparer.Ordinal)
     {
         ValidationError,
@@ -109,7 +115,8 @@ public static class WorkerFailureCategories
         SnapshotTooLarge,
         SnapshotUnavailable,
         ResultItemTooLarge,
-        ResultMetadataTooLarge
+        ResultMetadataTooLarge,
+        CapabilityUnavailable
     };
 
     /// <summary>True when <paramref name="value"/> is exactly one of the approved category constants.</summary>

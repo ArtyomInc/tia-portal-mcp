@@ -13,6 +13,7 @@ public static class WorkerProtocol
         "expected-session-identity",
         "response-session-identity",
         "deterministic-project-selection",
-        "typed-project-tree-selector"
+        "typed-project-tree-selector",
+        "generic-object-read"
     };
 }

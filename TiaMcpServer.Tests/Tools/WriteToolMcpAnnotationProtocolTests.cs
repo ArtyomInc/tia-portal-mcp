@@ -12,6 +12,7 @@ public class WriteToolMcpAnnotationProtocolTests
         "execute_read_batch",
         "get_project_status",
         "network_read",
+        "object_read",
     };
 
     private static readonly string[] ReadWriteToolNames =
@@ -26,6 +27,7 @@ public class WriteToolMcpAnnotationProtocolTests
         "get_project_status",
         "network_read",
         "network_write",
+        "object_read",
         "open_project",
         "preview_write_batch",
         "save_project",
@@ -52,7 +54,7 @@ public class WriteToolMcpAnnotationProtocolTests
         var byName = tools.ToDictionary(tool => tool.Name, StringComparer.Ordinal);
 
         Assert.Equal(ReadWriteToolNames, tools.Select(tool => tool.Name));
-        Assert.Equal(14, tools.Length);
+        Assert.Equal(ReadWriteToolNames.Length, tools.Length);
 
         foreach (var expected in ExpectedWriteToolAnnotations)
         {
@@ -77,7 +79,7 @@ public class WriteToolMcpAnnotationProtocolTests
         var toolNames = tools.Select(tool => tool.Name).ToArray();
 
         Assert.Equal(ReadOnlyToolNames, toolNames);
-        Assert.Equal(4, tools.Length);
+        Assert.Equal(ReadOnlyToolNames.Length, tools.Length);
 
         foreach (var writeToolName in ReadWriteToolNames.Except(ReadOnlyToolNames, StringComparer.Ordinal))
         {

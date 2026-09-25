@@ -154,6 +154,11 @@ internal static class Program
                 "list_network_objects" => ListNetworkObjects(request),
                 "inspect_network_object" => InspectNetworkObject(request),
                 "probe_network_object_attributes" => ProbeNetworkObjectAttributes(request),
+                "describe_object" => WithProjectAndPortal(request, (project, portal) => Success(ObjectReadService.Describe(project, portal, request))),
+                "list_object_children" => WithProjectAndPortal(request, (project, portal) => Success(ObjectReadService.ListChildren(project, portal, request))),
+                "read_object_attributes" => WithProjectAndPortal(request, (project, portal) => Success(ObjectReadService.ReadAttributes(project, portal, request))),
+                "export_object" => WithProjectAndPortal(request, (project, portal) => Success(ObjectReadService.Export(project, portal, request))),
+                "list_capabilities" => WithSession(request, session => Success(ObjectReadService.ListCapabilities(session.TiaPortal))),
                 "probe_subnet_lifecycle_mutations" => ProbeSubnetLifecycleMutations(request),
                 "search_equipment_catalog" => SearchEquipmentCatalog(request),
                 "add_network_device" => AddNetworkDevice(request),
@@ -1340,6 +1345,10 @@ internal static class Program
             return body(session.Project);
         });
     }
+
+    /// <summary>Like <see cref="WithProject"/>, additionally handing the body the attached Portal.</summary>
+    private static WorkerResponse WithProjectAndPortal(WorkerRequest request, Func<Project, TiaPortal?, WorkerResponse> body)
+        => WithProject(request, project => body(project, _sharedSession.TiaPortal));
 
     /// <summary>
     /// Applies <see cref="ProjectOpenPolicy"/> before any non-lifecycle operation may open a

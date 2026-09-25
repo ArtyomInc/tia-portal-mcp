@@ -21,6 +21,7 @@ Design documents, written before implementation.
 
 | Date | Document |
 | --- | --- |
+| 2026-09-25 | [R0 — generic object read (`object_read`)](specs/2026-09-25-r0-object-read-design.md) |
 | 2026-09-06 | [Issue #32 scalable project-tree browsing v3](specs/2026-09-06-issue-32-scalable-project-tree-browsing-v3-design.md) |
 | 2026-09-01 | [Write-safety preview and registered-surface hardening](specs/2026-09-01-write-safety-hardening-design.md) |
 | 2026-08-28 | [Issue #31 project completeness and hardware pagination](specs/2026-08-28-issue-31-project-completeness-pagination-design.md) |
@@ -40,6 +41,7 @@ Task-level implementation plans derived from the specs above.
 
 | Date | Document |
 | --- | --- |
+| 2026-09-25 | [R0 — generic object read (`object_read`)](plans/2026-09-25-r0-object-read.md) |
 | 2026-09-06 | [Issue #32 scalable project-tree browsing v3](plans/2026-09-06-issue-32-scalable-project-tree-browsing-v3.md) |
 | 2026-09-01 | [PR 1 — explicit MCP tool annotations](plans/2026-09-01-pr1-explicit-mcp-tool-annotations.md) |
 | 2026-09-01 | [PR 2 — registered-tool delegation](plans/2026-09-01-pr2-registered-tool-delegation.md) |
@@ -77,6 +79,7 @@ explicitly pending.
 
 | Date | Document |
 | --- | --- |
+| 2026-09-25 | [R0 — generic object read — read-only live PASS](acceptance/reports/2026-09-25-r0-object-read-live.md) |
 | 2026-09-06 | [PR 6 — project-tree safety scopes — mandatory live PASS](acceptance/reports/2026-09-01-pr6-project-tree-safety-scopes-live.md) |
 | 2026-09-05 | [PR 5 — tag-operation safety scopes — mandatory live PASS](acceptance/reports/2026-09-01-pr5-tag-operation-safety-scopes-live.md) |
 | 2026-09-05 | [PR 3 — exact `update_tag` safety snapshot — mandatory live PASS](acceptance/reports/2026-09-01-pr3-update-tag-safety-snapshot-live.md) |

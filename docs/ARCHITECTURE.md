@@ -53,7 +53,7 @@ falling back to another mode.
 
 ### Read-write mode
 
-Read-write mode exposes 14 tools: the four read-only observation tools plus ten
+Read-write mode exposes 15 tools: the five read-only observation tools plus ten
 read-write-only tools. It preserves the preview-then-apply safety-token model.
 
 ### Read-only mode
@@ -63,7 +63,7 @@ archives, switches, or closes a project; never compiles; never controls a PLC;
 and never performs project-data mutations. It operates only on a project that
 is already open in the attached TIA Portal instance.
 
-The read-only surface contains exactly four tools.
+The read-only surface contains exactly five tools.
 
 A supplied `projectPath` in read-only mode is an assertion. It must identify the
 currently open project; it is never used to open or switch projects.
@@ -75,6 +75,7 @@ Tool registration is explicit and mode-dependent. The host always registers:
 - `ProjectReadTools`
 - `ReadBatchTools`
 - `NetworkReadTools`
+- `ObjectReadTools`
 
 It registers the following only in read-write mode:
 
@@ -103,6 +104,7 @@ preview-only live V21 evidence are recorded in the
 | `browse_project_tree` | Return a bounded project subtree using optional `depth` and `startPath`. |
 | `execute_read_batch` | Execute up to 50 validated observation operations. |
 | `network_read` | Execute up to 50 validated network observation operations. |
+| `object_read` | Execute up to 50 generic Openness object reads addressed by an explicit object path. |
 
 The read batch supports:
 
@@ -474,6 +476,45 @@ Locked Public Contract); public-path live acceptance against a real TIA Portal V
 a separately authorized, outstanding gate. See
 `docs/SupportedOperations/NETWORK_PHASE4_SUBNET_LIFECYCLE.md` for the full contract and evidence
 status.
+
+## 7b. Generic object read (`object_read`) and the shared domain-read seam
+
+`object_read` is the generic read layer of the
+[Openness read coverage roadmap](roadmap/openness-read-coverage.md). It reaches objects through
+`IEngineeringObject` instead of one hand-written operation per Openness type:
+
+```text
+ObjectReadOperationRequest (strict, per-operation fields)
+        -> DomainReadCatalog (shared validation) -> OperationPolicyCatalog / access mode
+        -> OpennessWorkerClient.ReadDomainAsync (Observe/TemporaryExport methods only)
+        -> worker: ObjectPathResolver over IObjectNode (EngineeringObjectNode adapter)
+        -> ObjectDescriptionBuilder / ObjectChildrenPager / attribute inspector / ObjectExportWindow
+        -> ObjectReadPayloadContract (one declared result type per operation)
+        -> DomainReadToolRunner -> StructuredOperationBatch -> StructuredToolResult
+```
+
+- **Object path.** An ordered list of `composition` (element by `index`, by exact `elementName`,
+  or by index verified against the name), `attribute` (an object-valued dynamic attribute or public
+  CLR navigation property such as `SoftwareContainer.Software`), and `service`
+  (`GetService<T>()` for a declared service type) steps. Zero, several, or drifted matches fail
+  closed with `target_not_found`, `target_ambiguous`, or `target_evidence_mismatch`.
+- **Scope.** The walker calls only `GetAttributeInfos`, `GetAttribute`, `GetCompositionInfos`,
+  `GetComposition`, `GetServiceInfos`, `GetService<T>`, public CLR property getters that return
+  engineering objects, and — for `export_object` only — `Export` into a temporary directory. It never
+  invokes actions. Services whose type name contains `Online`, `Download`, or `Upload` are denied;
+  `Parent` is not a step; the Portal's `Projects` composition is hidden; and any step that lands on
+  a project object is denied, so the walk cannot leave the bound project.
+- **Siemens-free core.** `TiaMcpServer.OpennessWorker/ObjectModel/` (resolver, pager, offset cursor,
+  description builder, export window) is linked into the test project and exercised on an in-memory
+  graph; `EngineeringObjectNode` is the only Siemens adapter.
+- **Shared domain-read framework.** `TiaMcpServer/DomainReads/` (`DomainReadCatalog`,
+  `DomainPayloadProjector`, `DomainReadToolRunner`, `DomainReadResponse`) and
+  `OpennessWorkerClient.ReadDomainAsync` are domain-free; later read tools of the roadmap reuse them
+  rather than adding a parallel validation, decoding, or rendering path. `ReadDomainAsync` refuses
+  any method the policy catalog does not classify as `Observe` or `TemporaryExport`.
+- **Exports.** `DocumentInfo` is removed from `export_object` output as it is from
+  `get_block_content`, so repeated exports of an unchanged object are byte-identical and the
+  whole-document SHA-256 validates every character window.
 
 ## 8. Write safety
 

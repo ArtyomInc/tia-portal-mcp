@@ -576,6 +576,28 @@ public class OpennessWorkerClient : IDisposable
             "{}");
     }
 
+    /// <summary>
+    /// One bound read of a structured domain read tool (R0 <c>object_read</c> and later domain
+    /// tools). <paramref name="method"/> must be an Observe or TemporaryExport operation: host
+    /// access policy and worker authorization classify it exactly like any dedicated read, and
+    /// <paramref name="configure"/> may only populate that operation's request fields.
+    /// </summary>
+    public Task<WorkerCallResult> ReadDomainAsync(
+        string method,
+        string? projectPath,
+        Action<WorkerRequest> configure)
+    {
+        var capability = OperationPolicyCatalog.GetCapability(method);
+        if (capability is not (OperationCapability.Observe or OperationCapability.TemporaryExport))
+        {
+            return Task.FromResult(WorkerCallResult.Fail(
+                WorkerFailureCategories.AccessDenied,
+                $"'{method}' is not a read operation and cannot be sent through the domain read path."));
+        }
+
+        return SendBoundProjectRequestAsync(method, projectPath, configure, "{}");
+    }
+
     public Task<WorkerCallResult> AddNetworkDeviceAsync(
         string typeIdentifier,
         string deviceName,

@@ -107,7 +107,7 @@ public static class AssemblyResolver
         return loadedAssembly;
     }
 
-    private static string GetOpennessInstallPath()
+    internal static string GetOpennessInstallPath()
     {
         var checkedLocations = new List<string>();
         var environmentPath = Environment.GetEnvironmentVariable(TiaPortalV21DirEnvironmentVariable);

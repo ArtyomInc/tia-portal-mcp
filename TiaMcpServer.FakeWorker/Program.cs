@@ -798,6 +798,31 @@ while ((line = Console.In.ReadLine()) is not null)
                 : $$"""{"success":false,"error":"expected inspect_network_object, got '{{ReadMethod(line)}}'"}""");
             break;
 
+        // ---------------------------------------------------------------------------
+        // R0 generic object read fixtures
+        // ---------------------------------------------------------------------------
+
+        case "object-read":
+            Respond(ReadMethod(line) switch
+            {
+                "describe_object" => Success(ToCamelCaseJson(ObjectDescriptionFixture(line))),
+                "list_object_children" => Success(ToCamelCaseJson(ObjectChildrenFixture(line))),
+                "read_object_attributes" => Success(ToCamelCaseJson(ObjectAttributesFixture(line))),
+                "export_object" => Success(ToCamelCaseJson(ObjectExportFixture(line))),
+                "list_capabilities" => Success(ToCamelCaseJson(CapabilitiesFixture())),
+                _ => $$"""{"success":false,"error":"unexpected method '{{ReadMethod(line)}}' for object-read"}"""
+            });
+            break;
+
+        case "object-read-not-found":
+            Respond("""{"success":false,"failureCategory":"target_not_found","error":"ObjectPath segment 0: 'Project' declares no composition 'Nope'."}""");
+            break;
+
+        case "object-read-malformed":
+            // Worker reports SUCCESS but the payload fails the declared result contract.
+            Respond("""{"success":true,"payload":"{\"unexpectedShape\":true}"}""");
+            break;
+
         case "list-network-objects-malformed":
             // Worker reports SUCCESS but the payload fails the declared result contract.
             Respond("""{"success":true,"payload":"{\"unexpectedShape\":true}"}""");
@@ -1041,6 +1066,108 @@ WorkerResponse BindingConflict(string error)
         FailureCategory = WorkerFailureCategories.BindingConflict,
         Error = error
     };
+
+List<ObjectPathSegmentInfo> RequestObjectPath(string requestLine)
+{
+    using var doc = JsonDocument.Parse(requestLine);
+    return doc.RootElement.TryGetProperty("objectPath", out var path) && path.ValueKind == JsonValueKind.Array
+        ? path.Deserialize<List<ObjectPathSegmentInfo>>(requestJsonOptions) ?? new List<ObjectPathSegmentInfo>()
+        : new List<ObjectPathSegmentInfo>();
+}
+
+ObjectDescriptionInfo ObjectDescriptionFixture(string requestLine) => new()
+{
+    Root = ReadField(requestLine, "objectRoot") ?? ObjectRoots.Project,
+    ObjectPath = RequestObjectPath(requestLine),
+    TypeName = "Siemens.Engineering.Project",
+    Name = "Fixture",
+    Compositions = new List<ObjectCompositionDescriptorInfo>
+    {
+        new() { Name = "DeviceGroups", TypeName = "Siemens.Engineering.HW.DeviceUserGroupComposition" },
+        new() { Name = "Devices", TypeName = "Siemens.Engineering.HW.DeviceComposition" },
+    },
+    Attributes = new List<ObjectAttributeDescriptorInfo>
+    {
+        new() { Name = "Author", Access = "readWrite", SupportedTypes = new List<string> { "System.String" } },
+        new() { Name = "Comment", Access = "readOnly", SupportedTypes = new List<string> { "Siemens.Engineering.MultilingualText" }, Navigable = true },
+    },
+    Services = new List<ObjectServiceDescriptorInfo>
+    {
+        new() { Name = "ProjectLibrary", TypeName = "Siemens.Engineering.Library.ProjectLibrary", Allowed = true },
+    },
+    Exportable = false,
+};
+
+ObjectChildrenPageInfo ObjectChildrenFixture(string requestLine)
+{
+    var basePath = RequestObjectPath(requestLine);
+    var names = new[] { "PLC_1", "HMI_1", "IO_1" };
+    var offset = ReadField(requestLine, "objectCursor") is null ? 0 : 2;
+    var children = names.Skip(offset).Take(2).Select((name, i) => new ObjectChildInfo
+    {
+        Composition = "Devices",
+        Index = offset + i,
+        Name = name,
+        TypeName = "Siemens.Engineering.HW.Device",
+        ObjectPath = basePath
+            .Append(new ObjectPathSegmentInfo { Kind = "composition", Name = "Devices", ElementName = name, Index = offset + i })
+            .ToList(),
+    }).ToList();
+    return new ObjectChildrenPageInfo
+    {
+        ObjectPath = basePath,
+        Children = children,
+        TotalCount = names.Length,
+        Offset = offset,
+        NextCursor = offset == 0 ? "fixture-cursor" : null,
+    };
+}
+
+ObjectAttributesInfo ObjectAttributesFixture(string requestLine) => new()
+{
+    ObjectPath = RequestObjectPath(requestLine),
+    TypeName = "Siemens.Engineering.Project",
+    Attributes = new List<NetworkAttributeInfo>
+    {
+        new()
+        {
+            Name = "Author",
+            Source = "dynamic",
+            Access = "readWrite",
+            SupportedTypes = new List<string> { "System.String" },
+            Availability = "available",
+            Value = new NetworkAttributeValueInfo { Kind = "string", Value = "Engineer", TypeName = "System.String" },
+        },
+    },
+};
+
+ObjectExportInfo ObjectExportFixture(string requestLine)
+{
+    const string document = "<Document><Engineering version=\"V21\" /></Document>";
+    var result = new ObjectExportInfo
+    {
+        ObjectPath = RequestObjectPath(requestLine),
+        TypeName = "Siemens.Engineering.SW.Tags.PlcTagTable",
+        TotalChars = document.Length,
+        Sha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(document))).ToLowerInvariant(),
+        Offset = 0,
+        Content = document,
+    };
+    return result;
+}
+
+OpennessCapabilitiesInfo CapabilitiesFixture() => new()
+{
+    Products = new List<InstalledProductInfo>
+    {
+        new() { Name = "STEP 7 Professional", Version = "V21", Options = new List<string>() },
+    },
+    Assemblies = new List<OpennessAssemblyAvailabilityInfo>
+    {
+        new() { Name = "Siemens.Engineering.WinCCUnified", Available = true, Version = "21.0.0.0" },
+        new() { Name = "Siemens.Engineering.MC.Drives", Available = false },
+    },
+};
 
 string? ScenarioKey(string? path)
 {

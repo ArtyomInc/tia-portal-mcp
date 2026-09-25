@@ -26,6 +26,16 @@ well-designed. The three biggest problems, in order of impact:
 
 ---
 
+## Openness read coverage — open follow-ups (2026-09-25)
+
+Found while delivering R0 `object_read`
+([acceptance](superpowers/acceptance/reports/2026-09-25-r0-object-read-live.md)):
+
+| # | Follow-up | Where | Why |
+|---|-----------|-------|-----|
+| R0.1 | `DateTime`, `TimeSpan`, primitive arrays (`string[]`), and `MultilingualText` attribute values are `unrepresentable`. Decide whether the shared value contract gains ISO-8601 strings, arrays, and per-language texts | `NetworkAttributeValueNormalizer.cs` | Common project and module attributes (`CreationTime`, `InstallationDate`, `PnDnsConfiguration`, comments) are invisible today; the normalizer is shared with `inspect_network_object`, so it is a contract change for both tools |
+| R0.2 | The service denylist matches `Online`/`Download`/`Upload` as substrings, which also refuses `TcGatewaySearchAndDownloadProvider` (Teamcenter, not a device download) | `ObjectModel/ObjectPathRules.cs` | Conservative by design; replace with an explicit type list if a Teamcenter read is ever needed |
+
 ## Phase 0 — Quick wins (small-model usability; ~1 day total, all low-risk)
 
 | # | Change | Where | Why |

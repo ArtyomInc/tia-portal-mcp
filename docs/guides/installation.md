@@ -178,12 +178,13 @@ Configuration precedence: CLI argument > environment variable > default (read-wr
 
 The mode is resolved once at startup and cannot be changed during the process lifetime. There is no MCP tool that changes the access mode at runtime.
 
-In read-only mode, the server exposes exactly four MCP tools:
+In read-only mode, the server exposes exactly five MCP tools:
 
 - `get_project_status` — read active project metadata without opening or switching projects.
 - `browse_project_tree` — browse a bounded project subtree with optional `depth` and `startPath`.
 - `execute_read_batch` — run the four retained non-project generic reads in a batch.
 - `network_read` — run the two dedicated network reads in a batch.
+- `object_read` — read any Openness object of the open project through an explicit object path.
 
 The following operations are **not available** in read-only mode:
 

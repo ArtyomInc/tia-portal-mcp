@@ -32,6 +32,11 @@ Project status, project-tree browsing, and compilation are separate tools: `get_
 
 `update_block_logic`, `update_type_content`, `create_block`, `delete_block`, `create_block_group`, `delete_block_group`, `create_tag_table`, `delete_tag_table`, `create_tag`, `update_tag`, `delete_tag`, `create_user_constant`, `update_user_constant`, `delete_user_constant`, `add_network_device`, `configure_network_device`, `start_plc`, and `stop_plc`.
 
+### Generic object reads
+
+`object_read` reads any Openness object of the open project through an explicit object path. See
+[OBJECT_READ_SUMMARY.md](OBJECT_READ_SUMMARY.md).
+
 ### Project lifecycle tools
 
 The server also provides six single-purpose lifecycle tools:
@@ -68,6 +73,7 @@ Read responses may include `warnings` for partial or degraded data. Hardware rea
 | PLC software | [PLC_OPERATIONS_SUMMARY.md](PLC_OPERATIONS_SUMMARY.md) |
 | HMI | [HMI_OPERATIONS_SUMMARY.md](HMI_OPERATIONS_SUMMARY.md) |
 | Networks and topology | [NETWORK_OPERATIONS_SUMMARY.md](NETWORK_OPERATIONS_SUMMARY.md) |
+| Generic object reads (any Openness object) | [OBJECT_READ_SUMMARY.md](OBJECT_READ_SUMMARY.md) |
 | SIMATIC drives / Startdrive | [SIMATIC_DRIVES_OPERATIONS_SUMMARY.md](SIMATIC_DRIVES_OPERATIONS_SUMMARY.md) |
 | PLC import/export formats | [IMPORT_EXPORT_OPTIONS_SUMMARY.md](IMPORT_EXPORT_OPTIONS_SUMMARY.md) |
 | Multiuser | [MULTIUSER_OPERATIONS_SUMMARY.md](MULTIUSER_OPERATIONS_SUMMARY.md) |
