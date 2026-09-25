@@ -6,8 +6,8 @@ permissions:
 on:
     push:
         branches: ["main"]
+    # Every pull request is tested, including stacked ones whose base is another feature branch.
     pull_request:
-        branches: ["main"]
 
 jobs:
 

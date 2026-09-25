@@ -1,5 +1,11 @@
 name: Publish .NET Global Tool
 
+# Publishes the tool package for the repository that runs the workflow:
+# - always to that repository owner's GitHub Packages NuGet feed (GITHUB_TOKEN, no secret needed);
+# - to nuget.org only when the NUGET_USER secret is set (trusted publishing through OIDC).
+# The package ID defaults to TiaMcpServer and can be overridden with the NUGET_PACKAGE_ID
+# repository variable, which a fork needs on nuget.org because package IDs there are owned.
+
 on:
   push:
     tags:
@@ -13,12 +19,16 @@ on:
 
 permissions:
   contents: write
+  packages: write
   id-token: write
 
 jobs:
   build-and-publish:
     runs-on: windows-latest
-    
+    env:
+      PACKAGE_ID: ${{ vars.NUGET_PACKAGE_ID != '' && vars.NUGET_PACKAGE_ID || 'TiaMcpServer' }}
+      PUBLISH_TO_NUGET_ORG: ${{ secrets.NUGET_USER != '' }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
@@ -54,10 +64,10 @@ jobs:
           "PACKAGE_VERSION=$packageVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
           "package_version=$packageVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "release_tag=$releaseTag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          Write-Host "Resolved NuGet package version $packageVersion from release tag $releaseTag"
+          Write-Host "Resolved NuGet package $env:PACKAGE_ID $packageVersion from release tag $releaseTag"
 
       - name: Build and Pack
-        run: dotnet pack TiaMcpServer/TiaMcpServer.csproj -c Release --no-restore -o ./out /p:Version=$env:PACKAGE_VERSION /p:PackageVersion=$env:PACKAGE_VERSION /p:InformationalVersion=$env:PACKAGE_VERSION /p:IncludeSourceRevisionInInformationalVersion=false
+        run: dotnet pack TiaMcpServer/TiaMcpServer.csproj -c Release --no-restore -o ./out /p:PackageId=$env:PACKAGE_ID /p:RepositoryUrl=${{ github.server_url }}/${{ github.repository }} /p:Version=$env:PACKAGE_VERSION /p:PackageVersion=$env:PACKAGE_VERSION /p:InformationalVersion=$env:PACKAGE_VERSION /p:IncludeSourceRevisionInInformationalVersion=false
 
       - name: Verify tool package contents
         shell: pwsh
@@ -65,15 +75,23 @@ jobs:
           $pkg = Get-ChildItem -Path ./out -Filter *.nupkg | Select-Object -First 1
           ./scripts/verify-doctor-package.ps1 -PackagePath $pkg.FullName
 
-       # Get a short-lived NuGet API key
+      # The repository owner's GitHub Packages feed: https://nuget.pkg.github.com/<owner>/index.json
+      - name: Push to GitHub Packages
+        shell: pwsh
+        run: |
+          $pkg = Get-ChildItem -Path ./out -Filter *.nupkg | Select-Object -First 1
+          dotnet nuget push $pkg.FullName --api-key ${{ secrets.GITHUB_TOKEN }} --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --skip-duplicate
+
+      # Get a short-lived NuGet API key (only when nuget.org trusted publishing is configured)
       - name: NuGet login (OIDC → temp API key)
+        if: env.PUBLISH_TO_NUGET_ORG == 'true'
         uses: NuGet/login@v1
         id: login
         with:
-          user:  ${{ secrets.NUGET_USER }}
-    
-      # Push the package
+          user: ${{ secrets.NUGET_USER }}
+
       - name: NuGet push
+        if: env.PUBLISH_TO_NUGET_ORG == 'true'
         run: |
           $pkg = Get-ChildItem -Path ./out -Filter *.nupkg | Select-Object -First 1
           dotnet nuget push $pkg.FullName --api-key ${{steps.login.outputs.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json --skip-duplicate
