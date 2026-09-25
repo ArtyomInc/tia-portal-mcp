@@ -135,3 +135,33 @@ dotnet tool install -g TiaMcpServer
 ```
 
 This reinstalls the latest stable release from nuget.org.
+
+## Publishing a release
+
+`.github/workflows/publish.yml` runs on a `v*` tag (or manually with a version). It packs the tool,
+verifies the package layout, then publishes it for the repository that runs the workflow:
+
+| Destination | When | Configuration |
+| --- | --- | --- |
+| GitHub Packages of the repository owner (`https://nuget.pkg.github.com/<owner>/index.json`) | Always | None — the workflow's `GITHUB_TOKEN` has `packages: write` |
+| nuget.org | Only when the `NUGET_USER` repository secret is set | A nuget.org trusted-publishing policy for this repository and workflow, and `NUGET_USER` set to the nuget.org account name |
+| GitHub Release (`.nupkg` and the standalone `tia-mcp-windows-x64.zip`) | Always | None |
+
+The package ID is `TiaMcpServer` unless the `NUGET_PACKAGE_ID` repository variable overrides it. A
+fork that publishes to nuget.org must use its own ID (for example `YourName.TiaMcpServer`), because
+nuget.org package IDs belong to their owner; the installed command stays `tia-mcp`.
+
+Release from a fork:
+
+```powershell
+git tag v2.8.0
+git push origin v2.8.0
+```
+
+Install from GitHub Packages (a personal access token with `read:packages` is required even for
+public packages):
+
+```powershell
+dotnet nuget add source https://nuget.pkg.github.com/<owner>/index.json --name github-<owner> --username <user> --password <token>
+dotnet tool install -g TiaMcpServer --add-source github-<owner>
+```
