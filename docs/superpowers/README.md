@@ -89,6 +89,7 @@ explicitly pending.
 
 | Date | Document |
 | --- | --- |
+| 2026-09-25 | [R3–R5 — library, HMI, and governance reads — combined read-only live PASS](acceptance/reports/2026-09-25-r3-r5-live.md) |
 | 2026-09-25 | [R2 — hardware reads — read-only live PASS with documented comparison limit](acceptance/reports/2026-09-25-r2-hardware-read-live.md) |
 | 2026-09-25 | [R1 — PLC read domain (`plc_read`) — read-only live PASS](acceptance/reports/2026-09-25-r1-plc-read-live.md) |
 | 2026-09-25 | [R0 — generic object read — read-only live PASS](acceptance/reports/2026-09-25-r0-object-read-live.md) |
