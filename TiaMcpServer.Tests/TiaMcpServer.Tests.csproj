@@ -244,6 +244,8 @@
     <Compile Include="..\TiaMcpServer\PlcRead\*.cs" Link="Host\PlcRead\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer.OpennessWorker\PlcRead\*.cs" Link="Linked\PlcRead\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer.OpennessWorker\HardwareRead\*.cs" Link="Linked\HardwareRead\%(Filename)%(Extension)" />
+    <Compile Include="..\TiaMcpServer\LibraryRead\*.cs" Link="Host\LibraryRead\%(Filename)%(Extension)" />
+    <Compile Include="..\TiaMcpServer.OpennessWorker\LibraryRead\*.cs" Link="Linked\LibraryRead\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer.OpennessWorker\ObjectModel\*.cs" Link="Linked\ObjectModel\%(Filename)%(Extension)" />
   </ItemGroup>
   <Import Project="TestUtilities\WorkerSerializationHarness.targets" />

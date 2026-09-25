@@ -902,6 +902,56 @@ while ((line = Console.In.ReadLine()) is not null)
             });
             break;
 
+        case "library-read":
+            Respond(ReadMethod(line) switch
+            {
+                "list_libraries" => Success(ToCamelCaseJson(new LibraryListInfo
+                {
+                    Libraries =
+                    {
+                        new LibrarySummaryInfo { Name = "test", Kind = "project", Root = "project", ObjectPath = { new ObjectPathSegmentInfo { Kind = "attribute", Name = "ProjectLibrary" } } },
+                        new LibrarySummaryInfo { Name = "Corporate", Kind = "global", Root = "portal", ObjectPath = { new ObjectPathSegmentInfo { Kind = "composition", Name = "GlobalLibraries", ElementName = "Corporate", Index = 0 } }, Values = { ["IsReadOnly"] = true } },
+                    },
+                })),
+                "list_library_types" or "list_master_copies" => Success(ToCamelCaseJson(new LibraryObjectListInfo
+                {
+                    LibraryName = ReadField(line, "libraryName") ?? "test",
+                    LibraryKind = ReadField(line, "libraryName") is null ? "project" : "global",
+                    Root = ReadField(line, "libraryName") is null ? "project" : "portal",
+                    Items = { DomainObjectFixture("fpValve", "LibraryType") },
+                    TotalCount = 1,
+                })),
+                "read_library_type" => Success(ToCamelCaseJson(new LibraryTypeInfo
+                {
+                    LibraryName = "test",
+                    Type = DomainObjectFixture(ReadField(line, "plcObjectName") ?? "fpValve", "LibraryType"),
+                    Versions =
+                    {
+                        new LibraryTypeVersionInfo
+                        {
+                            ObjectPath = DomainObjectFixture("fpValve", "LibraryType").ObjectPath,
+                            Values = { ["VersionNumber"] = "0.0.4", ["State"] = "Committed" },
+                            Dependencies = { new LibraryTypeVersionReferenceInfo { TypeName = "iHmiValve", VersionNumber = "0.0.2" } },
+                        },
+                    },
+                })),
+                "check_library_updates" => Success(ToCamelCaseJson(new LibraryUpdateCheckInfo
+                {
+                    LibraryName = "test",
+                    Messages = { new LibraryUpdateMessageInfo { Depth = 0, Description = "Project is up to date" } },
+                    TotalCount = 1,
+                })),
+                "find_type_instances" => Success(ToCamelCaseJson(new LibraryTypeInstancesInfo
+                {
+                    LibraryName = "test",
+                    TypeName = ReadField(line, "plcObjectName") ?? "fbValve",
+                    PlcName = "PLC_1",
+                    Instances = { new TiaMcpServer.Contracts.LibraryTypeInstanceInfo { Name = "fbValve", Kind = "FB", TypeName = "Siemens.Engineering.SW.Blocks.FB", VersionNumber = "0.0.1" } },
+                })),
+                _ => $$"""{"success":false,"error":"unexpected method '{{ReadMethod(line)}}' for library-read"}"""
+            });
+            break;
+
         case "object-read-not-found":
             Respond("""{"success":false,"failureCategory":"target_not_found","error":"ObjectPath segment 0: 'Project' declares no composition 'Nope'."}""");
             break;

@@ -120,6 +120,14 @@ public static class OperationPolicyCatalog
             ["read_port_topology"] = OperationCapability.Observe,
             ["compare_hardware"] = OperationCapability.Observe,
 
+            // Library reads (R3 library_read)
+            ["list_libraries"] = OperationCapability.Observe,
+            ["list_library_types"] = OperationCapability.Observe,
+            ["read_library_type"] = OperationCapability.Observe,
+            ["list_master_copies"] = OperationCapability.Observe,
+            ["check_library_updates"] = OperationCapability.Observe,
+            ["find_type_instances"] = OperationCapability.Observe,
+
             // SafetyRead (read-only safe, but requires a verified expected identity)
             ["read_create_block_safety_snapshot"] = OperationCapability.SafetyRead,
             ["read_create_block_group_safety_snapshot"] = OperationCapability.SafetyRead,

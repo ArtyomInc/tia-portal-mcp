@@ -5,6 +5,7 @@ using TiaMcpServer.Contracts;
 using TiaMcpServer.OpennessWorker.Openness;
 using TiaMcpServer.OpennessWorker.PlcRead;
 using TiaMcpServer.OpennessWorker.HardwareRead;
+using TiaMcpServer.OpennessWorker.LibraryRead;
 using WorkerTiaPortalSession = TiaMcpServer.OpennessWorker.Openness.TiaPortalSession;
 
 namespace TiaMcpServer.OpennessWorker;
@@ -179,6 +180,14 @@ internal static class Program
                     PlcReadService.Root(project), RequireDeviceName(request), request.ObjectPageSize, request.ObjectCursor))),
                 "read_port_topology" => WithProject(request, project => Success(HardwareReadService.ReadPortTopology(project, request.DeviceName))),
                 "compare_hardware" => WithProject(request, project => Success(HardwareReadService.CompareHardware(project, request))),
+                "list_libraries" => WithProjectAndPortal(request, (project, portal) => Success(LibraryReadBuilder.ListLibraries(
+                    PlcReadService.Root(project), portal is null ? null : new EngineeringObjectNode(portal)))),
+                "list_library_types" or "list_master_copies" => WithProjectAndPortal(request, (project, portal) => Success(LibraryReadBuilder.ListObjects(
+                    PlcReadService.Root(project), portal is null ? null : new EngineeringObjectNode(portal), request.Method, request.LibraryName, request.ObjectPageSize, request.ObjectCursor))),
+                "read_library_type" => WithProjectAndPortal(request, (project, portal) => Success(LibraryReadBuilder.ReadType(
+                    PlcReadService.Root(project), portal is null ? null : new EngineeringObjectNode(portal), request.LibraryName, RequirePlcObjectName(request), request.PlcGroupPath))),
+                "check_library_updates" => WithProjectAndPortal(request, (project, portal) => Success(LibraryReadService.CheckUpdates(project, portal, request))),
+                "find_type_instances" => WithProjectAndPortal(request, (project, portal) => Success(LibraryReadService.FindInstances(project, portal, request))),
                 "probe_subnet_lifecycle_mutations" => ProbeSubnetLifecycleMutations(request),
                 "search_equipment_catalog" => SearchEquipmentCatalog(request),
                 "add_network_device" => AddNetworkDevice(request),

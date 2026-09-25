@@ -106,6 +106,11 @@ internal sealed class FakeObjectNode : IObjectNode
         return _attributes.TryGetValue(name, out var value) ? ObjectValueRead.Of(value) : ObjectValueRead.Undeclared;
     }
 
+    public IReadOnlyList<IObjectNode>? ReadObjectList(string name)
+        => _attributes.TryGetValue(name, out var value) && value is IEnumerable<FakeObjectNode> nodes
+            ? nodes.Cast<IObjectNode>().ToList()
+            : null;
+
     public IReadOnlyList<ObjectMemberDescriptor> GetServices()
         => _services.Keys.Select(name => new ObjectMemberDescriptor(name, name)).ToList();
 

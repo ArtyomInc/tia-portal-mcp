@@ -48,6 +48,13 @@ public interface IObjectNode
     /// </summary>
     ObjectValueRead ReadValue(string name);
 
+    /// <summary>
+    /// Reads a value that is a list of engineering objects (an association such as
+    /// <c>Dependencies</c>) and wraps each element. Null when the value is undeclared, unreadable,
+    /// or not such a list.
+    /// </summary>
+    IReadOnlyList<IObjectNode>? ReadObjectList(string name);
+
     /// <summary>Declared services (full type names), in declaration order.</summary>
     IReadOnlyList<ObjectMemberDescriptor> GetServices();
 

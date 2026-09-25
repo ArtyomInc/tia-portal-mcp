@@ -16,6 +16,7 @@ public static class WorkerProtocol
         "typed-project-tree-selector",
         "generic-object-read",
         "plc-read",
-        "hardware-read"
+        "hardware-read",
+        "library-read"
     };
 }

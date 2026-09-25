@@ -64,6 +64,9 @@ public static class ObjectScalarNormalizer
             case Guid guid:
                 json = guid.ToString("D");
                 return true;
+            case System.IO.FileSystemInfo fileSystemInfo:
+                json = fileSystemInfo.FullName;
+                return true;
             case IEnumerable sequence when value.GetType().IsArray:
                 return TryNormalizeArray(sequence, out json);
             default:

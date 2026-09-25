@@ -1,6 +1,7 @@
 using TiaMcpServer.Batch;
 using TiaMcpServer.Network;
 using TiaMcpServer.ObjectRead;
+using TiaMcpServer.LibraryRead;
 using TiaMcpServer.PlcRead;
 using TiaMcpServer.Tools;
 
@@ -20,6 +21,7 @@ internal static class ApprovedToolSurface
         typeof(NetworkReadTools),
         typeof(ObjectReadTools),
         typeof(PlcReadTools),
+        typeof(LibraryReadTools),
     };
 
     /// <summary>Tool names exposed in read-only mode, ordinal-sorted.</summary>
@@ -28,6 +30,7 @@ internal static class ApprovedToolSurface
         "browse_project_tree",
         "execute_read_batch",
         "get_project_status",
+        "library_read",
         "network_read",
         "object_read",
         "plc_read",

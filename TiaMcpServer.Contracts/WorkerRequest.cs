@@ -413,6 +413,25 @@ public class WorkerRequest
 
     #endregion
 
+    #region Library reads (R3 library_read)
+
+    // Object selection reuses PlcObjectName (type name) and PlcGroupPath (folder path);
+    // find_type_instances reuses PlcName; paging reuses ObjectPageSize/ObjectCursor.
+
+    /// <summary>
+    /// Forwarded by: every library_read operation except list_libraries. Null selects the project
+    /// library; otherwise the exact name of an open global library.
+    /// </summary>
+    public string? LibraryName { get; set; }
+
+    /// <summary>Forwarded by: check_library_updates (true reports up-to-date types too).</summary>
+    public bool? LibraryIncludeUpToDate { get; set; }
+
+    /// <summary>Forwarded by: find_type_instances (optional exact version number, e.g. "1.0.2").</summary>
+    public string? LibraryVersion { get; set; }
+
+    #endregion
+
     #region Project lifecycle
 
     /// <summary>Forwarded by: create_project.</summary>

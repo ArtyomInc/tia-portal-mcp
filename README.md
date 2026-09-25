@@ -16,7 +16,7 @@ The current implementation covers project discovery and lifecycle operations, PL
 
 ## Tools
 
-The server currently exposes 16 tools in read-write mode and 6 tools in read-only mode.
+The server currently exposes 17 tools in read-write mode and 7 tools in read-only mode.
 
 ### Batch operations
 
@@ -59,6 +59,10 @@ Available write operations (for `preview_write_batch` / `apply_write_batch`): `u
 ### PLC program reads
 
 `plc_read` gives typed, audit-oriented views of a PLC program in up to 50 read-only operations: `list_plcs`; listings across nested groups — `list_blocks` (number, language, consistency, protection, dates, sizes), `list_types`, `list_watch_tables`, `list_technology_objects`, `list_external_sources`, `list_software_units`, `list_alarm_text_lists`, `list_opcua_server_interfaces`; detail reads — `read_watch_table`, `read_technology_object`, `read_block_fingerprints`; `read_checksums`; and `compare_software` (offline differences between two PLCs of the project). Every listed object carries an `objectPath` for `object_read`. See [docs/SupportedOperations/PLC_READ_SUMMARY.md](https://github.com/Czarnak/tia-portal-mcp/blob/main/docs/SupportedOperations/PLC_READ_SUMMARY.md).
+
+### Library reads
+
+`library_read` reads the project library and the global libraries already open in TIA Portal, in up to 50 read-only operations: `list_libraries`, `list_library_types`, `read_library_type` (versions with state, dependencies, and dependents), `list_master_copies`, `check_library_updates` (the update-check report), and `find_type_instances` (instances of a type in one PLC). Libraries are never opened, updated, or modified. See [docs/SupportedOperations/LIBRARY_READ_SUMMARY.md](https://github.com/Czarnak/tia-portal-mcp/blob/main/docs/SupportedOperations/LIBRARY_READ_SUMMARY.md).
 
 ### Project tools
 

@@ -74,6 +74,7 @@ Read responses may include `warnings` for partial or degraded data. Hardware rea
 | HMI | [HMI_OPERATIONS_SUMMARY.md](HMI_OPERATIONS_SUMMARY.md) |
 | Networks and topology | [NETWORK_OPERATIONS_SUMMARY.md](NETWORK_OPERATIONS_SUMMARY.md) |
 | Generic object reads (any Openness object) | [OBJECT_READ_SUMMARY.md](OBJECT_READ_SUMMARY.md) |
+| Library reads (types, versions, master copies, update check, instances) | [LIBRARY_READ_SUMMARY.md](LIBRARY_READ_SUMMARY.md) |
 | PLC program reads (listings, tables, fingerprints, comparison) | [PLC_READ_SUMMARY.md](PLC_READ_SUMMARY.md) |
 | SIMATIC drives / Startdrive | [SIMATIC_DRIVES_OPERATIONS_SUMMARY.md](SIMATIC_DRIVES_OPERATIONS_SUMMARY.md) |
 | PLC import/export formats | [IMPORT_EXPORT_OPTIONS_SUMMARY.md](IMPORT_EXPORT_OPTIONS_SUMMARY.md) |

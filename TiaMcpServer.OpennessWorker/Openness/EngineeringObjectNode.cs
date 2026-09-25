@@ -180,6 +180,26 @@ internal sealed class EngineeringObjectNode : IObjectNode
         }
     }
 
+    public IReadOnlyList<IObjectNode>? ReadObjectList(string name)
+    {
+        var read = ReadValue(name);
+        if (!read.Succeeded || read.Value is not IEnumerable sequence || read.Value is string)
+        {
+            return null;
+        }
+
+        var nodes = new List<IObjectNode>();
+        foreach (var element in OpennessReflection.Enumerate(sequence, name))
+        {
+            if (element is IEngineeringObject engineeringObject)
+            {
+                nodes.Add(new EngineeringObjectNode(engineeringObject));
+            }
+        }
+
+        return nodes;
+    }
+
     public IReadOnlyList<ObjectMemberDescriptor> GetServices()
     {
         if (EngineeringObject is not IEngineeringServiceProvider provider)
