@@ -30,7 +30,7 @@ public sealed class NetworkOperationRequest : IOperationBatchItem
     [Description("Client-supplied unique identifier for this network operation; returned results are keyed by it.")]
     public string OperationId { get; set; } = string.Empty;
 
-    [Description("Network operation to run: read_hardware_config, search_equipment_catalog, add_network_device, configure_network_device, list_network_objects, inspect_network_object, create_subnet, update_subnet, or delete_subnet.")]
+    [Description("Network operation to run: read_hardware_config, search_equipment_catalog, add_network_device, configure_network_device, list_network_objects, inspect_network_object, create_subnet, update_subnet, delete_subnet, list_device_groups, list_unplugged_items, list_hw_identifiers, read_port_topology, or compare_hardware.")]
     public string Operation { get; set; } = string.Empty;
 
     [Description("Optional absolute project path (.ap21). When omitted, the active project is used; all network writes in one request must share it.")]
@@ -73,10 +73,10 @@ public sealed class NetworkOperationRequest : IOperationBatchItem
     [Description("One or more network object kinds to enumerate. Required by list_network_objects. Valid values: deviceItem, networkInterface, node, subnet, ioSystem, communicationConnection.")]
     public IReadOnlyList<string>? ObjectKinds { get; set; }
 
-    [Description("Maximum number of objects to return in one page (1–200). Optional for read_hardware_config and list_network_objects.")]
+    [Description("Maximum number of objects to return in one page (1–200). Optional for read_hardware_config, list_network_objects, list_hw_identifiers, and compare_hardware.")]
     public int? PageSize { get; set; }
 
-    [Description("Opaque pagination cursor returned by a previous read_hardware_config or list_network_objects call. Optional for those operations.")]
+    [Description("Opaque pagination cursor returned by a previous page of read_hardware_config, list_network_objects, list_hw_identifiers, or compare_hardware. Optional for those operations.")]
     public string? Cursor { get; set; }
 
     [Description("Attribute names to read on the inspected object. Optional for inspect_network_object; must be non-empty when supplied and must contain at most 200 unique names.")]
@@ -91,6 +91,16 @@ public sealed class NetworkOperationRequest : IOperationBatchItem
 
     [Description("Settings to change on the targeted subnet. Required by update_subnet; at least one change must be requested.")]
     public NetworkSubnetChanges? SubnetChanges { get; set; }
+
+    // ------------------------------------------------------------------
+    // R2 hardware read fields
+    // ------------------------------------------------------------------
+
+    [Description("compare_hardware only: name of the device to compare against (the right-hand side). Matched ignoring case; must identify exactly one device.")]
+    public string? CompareDeviceName { get; set; }
+
+    [Description("compare_hardware only: when true, identical elements are returned too. Defaults to false (differences only).")]
+    public bool? IncludeIdentical { get; set; }
 }
 
 /// <summary>

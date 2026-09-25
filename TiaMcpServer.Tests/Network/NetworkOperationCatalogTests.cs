@@ -50,6 +50,11 @@ public class NetworkOperationCatalogTests
             ["create_subnet"] = (NetworkOperationCategory.Write, new[] { "subnet" }, Array.Empty<string>()),
             ["update_subnet"] = (NetworkOperationCategory.Write, new[] { "target", "subnetChanges" }, Array.Empty<string>()),
             ["delete_subnet"] = (NetworkOperationCategory.Write, new[] { "target" }, Array.Empty<string>()),
+            ["list_device_groups"] = (NetworkOperationCategory.Read, Array.Empty<string>(), Array.Empty<string>()),
+            ["list_unplugged_items"] = (NetworkOperationCategory.Read, Array.Empty<string>(), new[] { "deviceName" }),
+            ["list_hw_identifiers"] = (NetworkOperationCategory.Read, new[] { "deviceName" }, new[] { "pageSize", "cursor" }),
+            ["read_port_topology"] = (NetworkOperationCategory.Read, Array.Empty<string>(), new[] { "deviceName" }),
+            ["compare_hardware"] = (NetworkOperationCategory.Read, new[] { "deviceName", "compareDeviceName" }, new[] { "includeIdentical", "pageSize", "cursor" }),
         };
 
         var actual = NetworkOperationCatalog.All.ToDictionary(spec => spec.Name, StringComparer.Ordinal);

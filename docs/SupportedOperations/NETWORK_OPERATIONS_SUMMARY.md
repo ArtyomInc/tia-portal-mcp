@@ -27,6 +27,11 @@ The MCP provides a bounded device and network-identity surface:
 | `network_read` | `search_equipment_catalog` | Searches the hardware catalog for a device type before creation (`query`, optional `maxResults`). |
 | `network_read` | `list_network_objects` | Pages deterministic summaries for one or more `objectKinds`; accepts optional device-scoped filtering, `pageSize` 1-200, and an opaque continuation `cursor`. Complete identities include a selector that can be copied into inspection. |
 | `network_read` | `inspect_network_object` | Resolves one exact `target`, verifies its captured identity evidence, and returns modeled and generic attributes. Optional `attributeNames` is case-sensitive, duplicate-free, and limited to 200 names. |
+| `network_read` | `list_device_groups` | Device-group tree: ungrouped devices, then every group depth-first with its own devices. Every group and device carries an `objectPath` for `object_read`. |
+| `network_read` | `list_unplugged_items` | Unplugged device items (`name`, `typeIdentifier`, `orderNumber`, `positionNumber`) of every device, or of `deviceName`. |
+| `network_read` | `list_hw_identifiers` | Hardware identifiers (HW IDs) of `deviceName` and every nested device item, each with its owner path and `objectPath`; paged with `pageSize`/`cursor`. |
+| `network_read` | `read_port_topology` | Ports of every device, or of `deviceName`: owner path, scalar `NetworkPort` attributes, and configured partner ports (device and item path). Offline topology only. |
+| `network_read` | `compare_hardware` | Offline comparison of `deviceName` with `compareDeviceName` (`HardwareObject.CompareTo`), flattened like `plc_read` `compare_software`; `includeIdentical` optional; paged. |
 | `network_write` | `add_network_device` | Creates a device from an exact catalog `typeIdentifier`; requires `deviceName` and accepts optional `deviceItemName`. Flat by design — it names something that does not exist yet. |
 | `network_write` | `configure_network_device` | Configures one exact existing node: `target: { deviceName, nodeId }` plus `changes: { ipAddress?, subnetMask?, pnDeviceName?, subnet?: { subnetId }, ioSystem?: { subnetId, number } }`. |
 | `network_write` | `create_subnet` | Creates a new Ethernet or PROFIBUS subnet from `subnet: { name, networkType, highestAddress?, transmissionSpeed? }`. PROFIBUS-only fields are rejected for Ethernet. |
@@ -470,6 +475,11 @@ Every direct public network worker result decodes against exactly one declared C
 | `search_equipment_catalog` | `CatalogEntryInfo[]` | `typeName`, `typeIdentifier`, optional `articleNumber`/`version`/`catalogPath`/`description`. |
 | `list_network_objects` | `NetworkObjectListInfo` | `items[]`, exact `totalCount`/`returnedCount`, and nullable `nextCursor`; each item preserves selector completeness and discovery diagnostics. |
 | `inspect_network_object` | `NetworkObjectInspectionInfo` | Verified `target`, typed `evidence`, independent per-attribute results, and non-fatal `messages[]`. |
+| `list_device_groups` | `DeviceGroupTreeInfo` | `ungroupedDevices[]`, `groups[]` (`name`, `groupPath`, `objectPath`, `devices[]`), `diagnostics[]`. |
+| `list_unplugged_items` | `UnpluggedItemsInfo` | `devices[]` with `deviceName` and `items[]`. |
+| `list_hw_identifiers` | `HwIdentifiersInfo` | `identifiers[]` (`identifier`, `ownerPath`, `objectPath`), page position. |
+| `read_port_topology` | `PortTopologyInfo` | `ports[]` (`deviceName`, `itemPath`, `objectPath`, `values`, `partners[]`). |
+| `compare_hardware` | `HardwareCompareInfo` | `elements[]` (`path`, `depth`, `leftName`, `rightName`, `state`, `detail`), page position. |
 | `add_network_device` | `AddDeviceResultInfo` | `deviceName`, `rootItemName`, `typeIdentifier`, `warnings[]`. |
 | `configure_network_device` | `ConfigureNetworkDeviceResultInfo` | `deviceName`, `appliedSettings` (map), `skippedSettings` (map), `messages[]`. |
 | `create_subnet`, `update_subnet`, `delete_subnet` | `SubnetLifecycleResultInfo` | Exactly `subnetId`, `name`, `networkDeviceCount`, `networkDeviceCountUnchanged` (must be `true`). All three subnet lifecycle operations share this one result type. See [NETWORK_PHASE4_SUBNET_LIFECYCLE.md](NETWORK_PHASE4_SUBNET_LIFECYCLE.md). |

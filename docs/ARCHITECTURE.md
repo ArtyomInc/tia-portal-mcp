@@ -121,6 +121,9 @@ The read batch supports:
 - `search_equipment_catalog`
 - `list_network_objects`
 - `inspect_network_object`
+- `list_device_groups`, `list_unplugged_items`, `list_hw_identifiers`, `read_port_topology`,
+  `compare_hardware` (R2 hardware reads; they travel through the generic
+  `OpennessWorkerClient.ReadDomainAsync` path and are validated by `HardwareReadContract`)
 
 ### Project enumeration completeness
 
@@ -528,6 +531,16 @@ read with `IObjectNode.ReadValue` — a readable dynamic attribute, else a publi
 normalized by `ObjectScalarNormalizer` into JSON scalars (enum symbols, ISO-8601 dates). Only block
 fingerprints (`FingerprintProvider.GetFingerprints`) and offline comparison
 (`PlcSoftware.CompareTo`) use typed Siemens calls, in `Openness/PlcReadService.cs`.
+
+### R2 hardware reads on `network_read`
+
+The five R2 operations extend `NetworkOperationCatalog` rather than adding a tool. Devices, groups,
+and device items are enumerated by the shared Siemens-free `DeviceWalker` (ungrouped devices, then
+device groups depth-first — the same order `PlcLocator` uses); device-group trees and HW IDs are
+built over `IObjectNode`. Unplugged items (`Device.UnpluggedItems`), port partners
+(`NetworkPort.ConnectedPorts`), and offline hardware comparison (`Device.CompareTo`, flattened by
+the `CompareResultFlattener` shared with `compare_software`) are the only typed Siemens reads, in
+`Openness/HardwareReadService.cs`.
 
 ## 8. Write safety
 

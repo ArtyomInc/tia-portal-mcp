@@ -4,6 +4,7 @@ using Siemens.Engineering;
 using TiaMcpServer.Contracts;
 using TiaMcpServer.OpennessWorker.Openness;
 using TiaMcpServer.OpennessWorker.PlcRead;
+using TiaMcpServer.OpennessWorker.HardwareRead;
 using WorkerTiaPortalSession = TiaMcpServer.OpennessWorker.Openness.TiaPortalSession;
 
 namespace TiaMcpServer.OpennessWorker;
@@ -172,6 +173,12 @@ internal static class Program
                 "read_block_fingerprints" => WithProject(request, project => Success(PlcReadService.ReadBlockFingerprints(project, request))),
                 "read_checksums" => WithProject(request, project => Success(PlcReadBuilder.ReadChecksums(PlcReadService.Root(project), request.PlcName))),
                 "compare_software" => WithProject(request, project => Success(PlcReadService.CompareSoftware(project, request))),
+                "list_device_groups" => WithProject(request, project => Success(HardwareReadBuilder.ListDeviceGroups(PlcReadService.Root(project)))),
+                "list_unplugged_items" => WithProject(request, project => Success(HardwareReadService.ListUnpluggedItems(project, request.DeviceName))),
+                "list_hw_identifiers" => WithProject(request, project => Success(HardwareReadBuilder.ListHwIdentifiers(
+                    PlcReadService.Root(project), RequireDeviceName(request), request.ObjectPageSize, request.ObjectCursor))),
+                "read_port_topology" => WithProject(request, project => Success(HardwareReadService.ReadPortTopology(project, request.DeviceName))),
+                "compare_hardware" => WithProject(request, project => Success(HardwareReadService.CompareHardware(project, request))),
                 "probe_subnet_lifecycle_mutations" => ProbeSubnetLifecycleMutations(request),
                 "search_equipment_catalog" => SearchEquipmentCatalog(request),
                 "add_network_device" => AddNetworkDevice(request),
@@ -1358,6 +1365,11 @@ internal static class Program
             return body(session.Project);
         });
     }
+
+    private static string RequireDeviceName(WorkerRequest request)
+        => string.IsNullOrWhiteSpace(request.DeviceName)
+            ? throw new WorkerOperationException(WorkerFailureCategories.ValidationError, "DeviceName is required.")
+            : request.DeviceName!;
 
     private static string RequirePlcObjectName(WorkerRequest request)
         => string.IsNullOrWhiteSpace(request.PlcObjectName)

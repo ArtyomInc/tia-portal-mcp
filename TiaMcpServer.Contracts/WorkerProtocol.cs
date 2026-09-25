@@ -15,6 +15,7 @@ public static class WorkerProtocol
         "deterministic-project-selection",
         "typed-project-tree-selector",
         "generic-object-read",
-        "plc-read"
+        "plc-read",
+        "hardware-read"
     };
 }

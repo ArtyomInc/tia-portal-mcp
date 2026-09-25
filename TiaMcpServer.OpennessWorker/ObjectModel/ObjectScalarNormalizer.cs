@@ -140,8 +140,11 @@ public static class ObjectScalarNormalizer
             {
                 values[name] = json;
             }
-            else
+            else if (names is not null || !read.Succeeded)
             {
+                // A requested name, or any failed read, is reported. When every declared attribute
+                // is read, a readable but non-scalar value (a collection, an association) is simply
+                // not part of a scalar listing and is skipped.
                 unavailable.Add(name);
             }
         }

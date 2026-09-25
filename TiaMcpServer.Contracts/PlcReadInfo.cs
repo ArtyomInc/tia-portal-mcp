@@ -108,13 +108,13 @@ public sealed class PlcCompareInfo
     public string LeftPlcName { get; set; } = string.Empty;
     public string RightPlcName { get; set; } = string.Empty;
     public bool IncludeIdentical { get; set; }
-    public List<PlcCompareElementInfo> Elements { get; set; } = new List<PlcCompareElementInfo>();
+    public List<CompareElementInfo> Elements { get; set; } = new List<CompareElementInfo>();
     public int TotalCount { get; set; }
     public int Offset { get; set; }
     public string? NextCursor { get; set; }
 }
 
-public sealed class PlcCompareElementInfo
+public sealed class CompareElementInfo
 {
     /// <summary>Element names (left name, else right name) from below the root to this element.</summary>
     public List<string> Path { get; set; } = new List<string>();

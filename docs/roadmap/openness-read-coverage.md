@@ -1,7 +1,7 @@
 # Openness Read Coverage Roadmap
 
-Status: R0 (generic object reads) and R1 (PLC reads) are implemented with read-only live
-acceptance. R2–R5 follow in order; R6 (online reads) is deliberately last and gated behind an
+Status: R0 (generic object reads), R1 (PLC reads), and R2 (hardware reads) are implemented with
+read-only live acceptance. R3–R5 follow in order; R6 (online reads) is deliberately last and gated behind an
 explicit opt-in.
 
 This roadmap widens the **read** surface of the server toward the full TIA Portal V21 Openness API
@@ -36,7 +36,7 @@ temporary export directory.
 | --- | --- | --- | --- |
 | R0 | `object_read` (new) | Object-path addressing, `describe_object`, `list_object_children`, `read_object_attributes`, `export_object`, `list_capabilities` | Done — [acceptance](../superpowers/acceptance/reports/2026-09-25-r0-object-read-live.md) |
 | R1 | `plc_read` (new) | Block and type listings with metadata, watch/force tables and entries, technology objects and parameters, alarm text lists, Software Units, external sources, OPC UA server interfaces, block fingerprints, program checksums, offline software comparison (ProDiag deferred: no generic surface in V21; tag-table export is `object_read`) | Done — [acceptance](../superpowers/acceptance/reports/2026-09-25-r1-plc-read-live.md) |
-| R2 | `network_read` (extended) | Device groups, unplugged items, hardware identifiers, communication connections, port topology, system diagnostics settings | Planned |
+| R2 | `network_read` (extended) | Device-group tree, unplugged items, hardware identifiers, port topology, offline hardware comparison (communication connections were already covered by `list_network_objects`; diagnostics settings via `object_read`) | Done — [acceptance](../superpowers/acceptance/reports/2026-09-25-r2-hardware-read-live.md) |
 | R3 | `library_read` (new) | Project and open global libraries: types, versions, status, dependencies, master copies, update check, instance search, library comparison | Planned |
 | R4 | `hmi_read` (new) | WinCC Classic (`HmiTarget`) and WinCC Unified (`HmiSoftware`) inventories: screens, tags, connections, alarms, logs, text/graphic lists, scripts | Planned |
 | R5 | `governance_read` (new) | Portal processes and settings, project texts, UMAC users/roles, Safety administration and signatures, TestSuite inventory, Multiuser and VCI visibility | Planned |

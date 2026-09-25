@@ -28,6 +28,15 @@ public static class NetworkWorkerInvoker
                 MapSelector(operation.Target!),
                 operation.AttributeNames,
                 operation.ProjectPath),
+            "list_device_groups" or "list_unplugged_items" or "list_hw_identifiers" or "read_port_topology"
+                or "compare_hardware" => client.ReadDomainAsync(operation.Operation, operation.ProjectPath, request =>
+                {
+                    request.DeviceName = operation.DeviceName;
+                    request.CompareDeviceName = operation.CompareDeviceName;
+                    request.PlcIncludeIdentical = operation.IncludeIdentical;
+                    request.ObjectPageSize = operation.PageSize;
+                    request.ObjectCursor = operation.Cursor;
+                }),
             _ => Task.FromResult(WorkerCallResult.Fail(
                 WorkerFailureCategories.ValidationError,
                 $"Unsupported network read operation '{operation.Operation}'.")),

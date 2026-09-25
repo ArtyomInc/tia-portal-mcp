@@ -113,6 +113,13 @@ public static class OperationPolicyCatalog
             ["read_checksums"] = OperationCapability.Observe,
             ["compare_software"] = OperationCapability.Observe,
 
+            // Hardware reads (R2 network_read extension)
+            ["list_device_groups"] = OperationCapability.Observe,
+            ["list_unplugged_items"] = OperationCapability.Observe,
+            ["list_hw_identifiers"] = OperationCapability.Observe,
+            ["read_port_topology"] = OperationCapability.Observe,
+            ["compare_hardware"] = OperationCapability.Observe,
+
             // SafetyRead (read-only safe, but requires a verified expected identity)
             ["read_create_block_safety_snapshot"] = OperationCapability.SafetyRead,
             ["read_create_block_group_safety_snapshot"] = OperationCapability.SafetyRead,

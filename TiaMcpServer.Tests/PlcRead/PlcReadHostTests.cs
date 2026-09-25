@@ -122,7 +122,7 @@ public class PlcReadPayloadContractTests
         {
             LeftPlcName = "A",
             RightPlcName = "B",
-            Elements = { new PlcCompareElementInfo { Path = { "x" }, Depth = 3, State = "ObjectsDifferent" } },
+            Elements = { new CompareElementInfo { Path = { "x" }, Depth = 3, State = "ObjectsDifferent" } },
             TotalCount = 1,
         };
         Assert.Equal(WorkerFailureCategories.ProtocolError, Project("compare_software", bad).Failure!.Category);

@@ -85,13 +85,29 @@ public class NetworkFieldForwardingTests
         using var document = JsonDocument.Parse(result.Payload);
         foreach (var (fieldName, sentinel) in expected)
         {
+            var workerFieldName = WorkerFieldName(operationName, fieldName);
             var properties = document.RootElement.EnumerateObject()
-                .Where(property => property.NameEquals(fieldName))
+                .Where(property => property.NameEquals(workerFieldName))
                 .ToArray();
             var property = Assert.Single(properties);
             AssertSentinel(property.Value, sentinel);
         }
     }
+
+    /// <summary>
+    /// R2 hardware reads travel on the shared domain-read request fields, so their paging fields
+    /// are forwarded under the generic worker names.
+    /// </summary>
+    private static string WorkerFieldName(string operationName, string fieldName)
+        => NetworkOperationCatalog.HardwareReadOperationNames.Contains(operationName)
+            ? fieldName switch
+            {
+                "pageSize" => "objectPageSize",
+                "cursor" => "objectCursor",
+                "includeIdentical" => "plcIncludeIdentical",
+                _ => fieldName,
+            }
+            : fieldName;
 
     [Fact]
     public async Task AddNetworkDevice_OmittedDeviceItemNameForwardsDeviceName()

@@ -193,13 +193,20 @@ public class ObjectScalarNormalizerTests
     [Fact]
     public void ReadValues_WithoutNames_ReadsEveryDeclaredScalarAttribute()
     {
-        var node = new FakeObjectNode("X").WithAttribute("B", 2).WithAttribute("A", "a").WithAttribute("Nav", new FakeObjectNode("Y"));
+        var node = new FakeObjectNode("X")
+            .WithAttribute("B", 2)
+            .WithAttribute("A", "a")
+            .WithAttribute("Nav", new FakeObjectNode("Y"))
+            .WithAttribute("Ports", new List<object> { new object() })
+            .WithAttribute("Broken", 1);
+        node.FailingValues.Add("Broken");
         var unavailable = new List<string>();
 
         var values = ObjectScalarNormalizer.ReadValues(node, null, unavailable);
 
+        // Non-scalar values are skipped silently; only failed reads are reported.
         Assert.Equal(new[] { "A", "B" }, values.Keys);
-        Assert.Empty(unavailable);
+        Assert.Equal(new[] { "Broken" }, unavailable);
     }
 }
 

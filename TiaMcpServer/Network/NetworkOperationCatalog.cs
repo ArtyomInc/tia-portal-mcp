@@ -67,6 +67,8 @@ public static class NetworkOperationCatalog
         ("attributeNames", operation => operation.AttributeNames is not null),
         ("subnet", operation => operation.Subnet is not null),
         ("subnetChanges", operation => operation.SubnetChanges is not null),
+        ("compareDeviceName", operation => operation.CompareDeviceName is not null),
+        ("includeIdentical", operation => operation.IncludeIdentical is not null),
     };
 
     // ---------------------------------------------------------------------------
@@ -124,6 +126,12 @@ public static class NetworkOperationCatalog
             "UdpConnection",
             "HmiConnection",
         };
+
+    /// <summary>R2 hardware reads served through the generic domain-read worker path.</summary>
+    public static readonly IReadOnlyList<string> HardwareReadOperationNames = new[]
+    {
+        "list_device_groups", "list_unplugged_items", "list_hw_identifiers", "read_port_topology", "compare_hardware",
+    };
 
     public static IReadOnlyList<string> ReadOperationNames { get; } = NamesByCategory(NetworkOperationCategory.Read);
 
@@ -290,6 +298,11 @@ public static class NetworkOperationCatalog
             {
                 ValidateDeleteSubnet(operation, errors);
             }
+
+            if (HardwareReadOperationNames.Contains(spec.Name))
+            {
+                ValidateHardwareRead(operation, errors);
+            }
         }
 
         if (expectedCategory == NetworkOperationCategory.Write)
@@ -322,6 +335,7 @@ public static class NetworkOperationCatalog
         "attributeNames" => operation.AttributeNames is not null,
         "subnet" => operation.Subnet is not null,
         "subnetChanges" => operation.SubnetChanges is not null,
+        "compareDeviceName" => !string.IsNullOrWhiteSpace(operation.CompareDeviceName),
         _ => false,
     };
 
@@ -358,6 +372,30 @@ public static class NetworkOperationCatalog
         if (operation.PlcName is not null && string.IsNullOrWhiteSpace(operation.PlcName))
         {
             errors.Add($"{prefix} 'plcName' must not be blank when supplied.");
+        }
+    }
+
+    private static void ValidateHardwareRead(NetworkOperationRequest operation, List<string> errors)
+    {
+        var prefix = $"Operation '{operation.Operation}' (operationId '{operation.OperationId}'):";
+        if (operation.DeviceName is not null && string.IsNullOrWhiteSpace(operation.DeviceName))
+        {
+            errors.Add($"{prefix} 'deviceName' must not be blank.");
+        }
+
+        if (operation.CompareDeviceName is not null && string.IsNullOrWhiteSpace(operation.CompareDeviceName))
+        {
+            errors.Add($"{prefix} 'compareDeviceName' must not be blank.");
+        }
+
+        if (operation.PageSize is < 1 or > MaxPageSize)
+        {
+            errors.Add($"{prefix} 'pageSize' must be between 1 and {MaxPageSize}.");
+        }
+
+        if (operation.Cursor is not null && string.IsNullOrWhiteSpace(operation.Cursor))
+        {
+            errors.Add($"{prefix} 'cursor' must not be blank.");
         }
     }
 
@@ -948,6 +986,11 @@ public static class NetworkOperationCatalog
             new NetworkOperationSpec("create_subnet", NetworkOperationCategory.Write, new[] { "subnet" }, None),
             new NetworkOperationSpec("update_subnet", NetworkOperationCategory.Write, new[] { "target", "subnetChanges" }, None),
             new NetworkOperationSpec("delete_subnet", NetworkOperationCategory.Write, new[] { "target" }, None),
+            new NetworkOperationSpec("list_device_groups", NetworkOperationCategory.Read, None, None),
+            new NetworkOperationSpec("list_unplugged_items", NetworkOperationCategory.Read, None, new[] { "deviceName" }),
+            new NetworkOperationSpec("list_hw_identifiers", NetworkOperationCategory.Read, new[] { "deviceName" }, new[] { "pageSize", "cursor" }),
+            new NetworkOperationSpec("read_port_topology", NetworkOperationCategory.Read, None, new[] { "deviceName" }),
+            new NetworkOperationSpec("compare_hardware", NetworkOperationCategory.Read, new[] { "deviceName", "compareDeviceName" }, new[] { "includeIdentical", "pageSize", "cursor" }),
         };
 
         return specs.ToDictionary(spec => spec.Name, StringComparer.Ordinal);

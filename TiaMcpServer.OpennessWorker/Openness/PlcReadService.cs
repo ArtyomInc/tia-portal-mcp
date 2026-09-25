@@ -1,5 +1,4 @@
 using Siemens.Engineering;
-using Siemens.Engineering.Compare;
 using Siemens.Engineering.SW;
 using Siemens.Engineering.SW.Blocks;
 using TiaMcpServer.Contracts;
@@ -15,14 +14,6 @@ namespace TiaMcpServer.OpennessWorker.Openness;
 /// </summary>
 internal static class PlcReadService
 {
-    private const int MaxCompareElements = 10_000;
-
-    private static readonly HashSet<CompareResultState> IdenticalStates = new()
-    {
-        CompareResultState.ObjectsIdentical,
-        CompareResultState.FolderContentsIdentical,
-    };
-
     public static IObjectNode Root(Project project) => new EngineeringObjectNode(project);
 
     public static PlcFingerprintsInfo ReadBlockFingerprints(Project project, WorkerRequest request)
@@ -71,9 +62,7 @@ internal static class PlcReadService
         var rightSoftware = (PlcSoftware)((EngineeringObjectNode)right.Software).EngineeringObject;
 
         var includeIdentical = request.PlcIncludeIdentical ?? false;
-        var elements = new List<PlcCompareElementInfo>();
-        var result = leftSoftware.CompareTo(rightSoftware);
-        Flatten(result.RootElement, new List<string>(), 0, includeIdentical, elements);
+        var elements = CompareResultFlattener.Flatten(leftSoftware.CompareTo(rightSoftware), includeIdentical);
 
         var page = ListPager.Page(
             elements,
@@ -91,52 +80,6 @@ internal static class PlcReadService
             Offset = page.Offset,
             NextCursor = page.NextCursor,
         };
-    }
-
-    private static void Flatten(
-        CompareResultElement? element,
-        List<string> path,
-        int depth,
-        bool includeIdentical,
-        List<PlcCompareElementInfo> output)
-    {
-        if (element is null)
-        {
-            return;
-        }
-
-        var state = element.ComparisonResult;
-        if (includeIdentical || !IdenticalStates.Contains(state))
-        {
-            if (output.Count == MaxCompareElements)
-            {
-                throw new WorkerOperationException(
-                    WorkerFailureCategories.SnapshotTooLarge,
-                    $"The comparison holds more than {MaxCompareElements} elements; compare with includeIdentical false.");
-            }
-
-            output.Add(new PlcCompareElementInfo
-            {
-                Path = path.ToList(),
-                Depth = depth,
-                LeftName = element.LeftName,
-                RightName = element.RightName,
-                State = state.ToString(),
-                Detail = string.IsNullOrEmpty(element.DetailedInformation) ? null : element.DetailedInformation,
-            });
-        }
-
-        // Identical folders contain only identical elements, so they are not descended into
-        // unless the caller asked for identical elements.
-        if (!includeIdentical && state == CompareResultState.FolderContentsIdentical)
-        {
-            return;
-        }
-
-        foreach (CompareResultElement child in element.Elements)
-        {
-            Flatten(child, path.Append(child.LeftName ?? child.RightName ?? string.Empty).ToList(), depth + 1, includeIdentical, output);
-        }
     }
 
     private static string RequireName(WorkerRequest request)

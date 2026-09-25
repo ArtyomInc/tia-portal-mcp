@@ -403,6 +403,16 @@ public class WorkerRequest
 
     #endregion
 
+    #region Hardware reads (R2 network_read extension)
+
+    // Device selection reuses DeviceName (ordinal, case-insensitive, exactly one device).
+    // Paging reuses ObjectPageSize/ObjectCursor; comparison reuses PlcIncludeIdentical.
+
+    /// <summary>Forwarded by: compare_hardware (the right-hand device name).</summary>
+    public string? CompareDeviceName { get; set; }
+
+    #endregion
+
     #region Project lifecycle
 
     /// <summary>Forwarded by: create_project.</summary>

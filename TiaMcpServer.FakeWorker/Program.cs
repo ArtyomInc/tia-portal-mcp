@@ -836,7 +836,7 @@ while ((line = Console.In.ReadLine()) is not null)
                 {
                     LeftPlcName = "PLC_1",
                     RightPlcName = ReadField(line, "plcComparePlcName") ?? "PLC_2",
-                    Elements = { new PlcCompareElementInfo { Path = { "Program blocks", "Main" }, Depth = 2, LeftName = "Main", RightName = "Main", State = "ObjectsDifferent" } },
+                    Elements = { new CompareElementInfo { Path = { "Program blocks", "Main" }, Depth = 2, LeftName = "Main", RightName = "Main", State = "ObjectsDifferent" } },
                     TotalCount = 1,
                 })),
                 var method when method is not null && method.StartsWith("list_", StringComparison.Ordinal) => Success(ToCamelCaseJson(new PlcObjectListInfo
@@ -847,6 +847,58 @@ while ((line = Console.In.ReadLine()) is not null)
                     NextCursor = "plc-cursor",
                 })),
                 _ => $$"""{"success":false,"error":"unexpected method '{{ReadMethod(line)}}' for plc-read"}"""
+            });
+            break;
+
+        case "hardware-read":
+            Respond(ReadMethod(line) switch
+            {
+                "list_device_groups" => Success(ToCamelCaseJson(new DeviceGroupTreeInfo
+                {
+                    UngroupedDevices = { DeviceReferenceFixture("HMI_1", 0) },
+                    Groups =
+                    {
+                        new DeviceGroupInfo
+                        {
+                            Name = "Line",
+                            GroupPath = { "Line" },
+                            ObjectPath = { new ObjectPathSegmentInfo { Kind = "composition", Name = "DeviceGroups", ElementName = "Line", Index = 0 } },
+                            Devices = { DeviceReferenceFixture("Station_1", 0) },
+                        },
+                    },
+                })),
+                "list_unplugged_items" => Success(ToCamelCaseJson(new UnpluggedItemsInfo
+                {
+                    Devices = { new DeviceUnpluggedItemsInfo { DeviceName = "Station_1", Items = { new UnpluggedItemInfo { Name = "DI 16x24VDC", OrderNumber = "6ES7 521-1BH00-0AB0" } } } },
+                })),
+                "list_hw_identifiers" => Success(ToCamelCaseJson(new HwIdentifiersInfo
+                {
+                    DeviceName = ReadField(line, "deviceName") ?? "Station_1",
+                    Identifiers = { new HwIdentifierInfo { Identifier = 48, OwnerPath = { "PLC_1" }, ObjectPath = DeviceReferenceFixture("Station_1", 0).ObjectPath } },
+                    TotalCount = 1,
+                })),
+                "read_port_topology" => Success(ToCamelCaseJson(new PortTopologyInfo
+                {
+                    Ports =
+                    {
+                        new PortInfo
+                        {
+                            DeviceName = "Station_1",
+                            ItemPath = { "PLC_1", "PROFINET interface_1", "Port_1" },
+                            ObjectPath = DeviceReferenceFixture("Station_1", 0).ObjectPath,
+                            Values = { ["MediumAttachmentType"] = "Copper" },
+                            Partners = { new PortPartnerInfo { DeviceName = "IO_1", ItemPath = { "IM", "PROFINET interface", "Port_1" } } },
+                        },
+                    },
+                })),
+                "compare_hardware" => Success(ToCamelCaseJson(new HardwareCompareInfo
+                {
+                    LeftDeviceName = ReadField(line, "deviceName") ?? "Station_1",
+                    RightDeviceName = ReadField(line, "compareDeviceName") ?? "Station_2",
+                    Elements = { new CompareElementInfo { Path = { "PLC_1" }, Depth = 1, LeftName = "PLC_1", RightName = "PLC_1", State = "ObjectsDifferent" } },
+                    TotalCount = 1,
+                })),
+                _ => $$"""{"success":false,"error":"unexpected method '{{ReadMethod(line)}}' for hardware-read"}"""
             });
             break;
 
@@ -1228,6 +1280,13 @@ DomainObjectInfo DomainObjectFixture(string name, string kind) => new()
         .Append(new ObjectPathSegmentInfo { Kind = "composition", Name = "Blocks", ElementName = name, Index = 0 })
         .ToList(),
     Values = { ["Number"] = 1, ["IsConsistent"] = true, ["ModifiedDate"] = "2026-09-25T07:00:00.0000000Z" },
+};
+
+DeviceReferenceInfo DeviceReferenceFixture(string name, int index) => new()
+{
+    Name = name,
+    TypeIdentifier = "System:Device.S71500",
+    ObjectPath = { new ObjectPathSegmentInfo { Kind = "composition", Name = "Devices", ElementName = name, Index = index } },
 };
 
 string? ScenarioKey(string? path)

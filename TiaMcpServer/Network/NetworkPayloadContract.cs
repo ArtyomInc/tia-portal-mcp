@@ -124,6 +124,11 @@ public static class NetworkPayloadContract
         "create_subnet" => Decode<SubnetLifecycleResultInfo>(payload, ValidateSubnetLifecycleResult),
         "update_subnet" => Decode<SubnetLifecycleResultInfo>(payload, ValidateSubnetLifecycleResult),
         "delete_subnet" => Decode<SubnetLifecycleResultInfo>(payload, ValidateSubnetLifecycleResult),
+        "list_device_groups" => Decode<DeviceGroupTreeInfo>(payload, HardwareReadContract.ValidateDeviceGroups),
+        "list_unplugged_items" => Decode<UnpluggedItemsInfo>(payload, HardwareReadContract.ValidateUnplugged),
+        "list_hw_identifiers" => Decode<HwIdentifiersInfo>(payload, HardwareReadContract.ValidateHwIdentifiers),
+        "read_port_topology" => Decode<PortTopologyInfo>(payload, HardwareReadContract.ValidatePortTopology),
+        "compare_hardware" => Decode<HardwareCompareInfo>(payload, HardwareReadContract.ValidateCompare),
         _ => throw new JsonException($"No declared result contract for network operation '{operation.Operation}'."),
     };
 
