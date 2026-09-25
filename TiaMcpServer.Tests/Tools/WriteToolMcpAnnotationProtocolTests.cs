@@ -6,33 +6,9 @@ namespace TiaMcpServer.Tests.Tools;
 [Collection("Mcp protocol serial")]
 public class WriteToolMcpAnnotationProtocolTests
 {
-    private static readonly string[] ReadOnlyToolNames =
-    {
-        "browse_project_tree",
-        "execute_read_batch",
-        "get_project_status",
-        "network_read",
-        "object_read",
-    };
+    private static readonly string[] ReadOnlyToolNames = ApprovedToolSurface.ReadOnlyToolNames;
 
-    private static readonly string[] ReadWriteToolNames =
-    {
-        "apply_write_batch",
-        "archive_project",
-        "browse_project_tree",
-        "close_project",
-        "compile_check",
-        "create_project",
-        "execute_read_batch",
-        "get_project_status",
-        "network_read",
-        "network_write",
-        "object_read",
-        "open_project",
-        "preview_write_batch",
-        "save_project",
-        "save_project_as",
-    };
+    private static readonly string[] ReadWriteToolNames = ApprovedToolSurface.ReadWriteToolNames;
 
     private static readonly (string Name, bool ReadOnly, bool Destructive, bool OpenWorld)[] ExpectedWriteToolAnnotations =
     {

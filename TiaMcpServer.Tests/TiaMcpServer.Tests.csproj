@@ -239,6 +239,8 @@
       Link="Network\ConnectionModeledAttributeCatalog.cs" />
     <Compile Include="..\TiaMcpServer\DomainReads\*.cs" Link="Host\DomainReads\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer\ObjectRead\*.cs" Link="Host\ObjectRead\%(Filename)%(Extension)" />
+    <Compile Include="..\TiaMcpServer\PlcRead\*.cs" Link="Host\PlcRead\%(Filename)%(Extension)" />
+    <Compile Include="..\TiaMcpServer.OpennessWorker\PlcRead\*.cs" Link="Linked\PlcRead\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer.OpennessWorker\ObjectModel\*.cs" Link="Linked\ObjectModel\%(Filename)%(Extension)" />
   </ItemGroup>
   <Import Project="TestUtilities\WorkerSerializationHarness.targets" />

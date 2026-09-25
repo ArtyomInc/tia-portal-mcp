@@ -150,6 +150,36 @@ internal sealed class EngineeringObjectNode : IObjectNode
         }
     }
 
+    public ObjectValueRead ReadValue(string name)
+    {
+        try
+        {
+            var info = EngineeringObject.GetAttributeInfos()
+                .FirstOrDefault(candidate => string.Equals(candidate.Name, name, StringComparison.Ordinal));
+            if (info is not null)
+            {
+                return info.AccessMode is EngineeringAttributeAccessMode.Read or EngineeringAttributeAccessMode.ReadWrite
+                    ? ObjectValueRead.Of(EngineeringObject.GetAttribute(name))
+                    : ObjectValueRead.Failed("The attribute is not readable.");
+            }
+
+            var property = PublicType(EngineeringObject.GetType())
+                .GetProperty(name, BindingFlags.Instance | BindingFlags.Public);
+            if (property is null || !property.CanRead || property.GetIndexParameters().Length != 0
+                || ObjectPathRules.IsNavigationPropertyExcluded(property.Name))
+            {
+                return ObjectValueRead.Undeclared;
+            }
+
+            return ObjectValueRead.Of(ReadProperty(property));
+        }
+        catch (Exception ex) when (ex is EngineeringException or InvalidOperationException or NotSupportedException
+            or TargetInvocationException or ArgumentException)
+        {
+            return ObjectValueRead.Failed($"{ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
     public IReadOnlyList<ObjectMemberDescriptor> GetServices()
     {
         if (EngineeringObject is not IEngineeringServiceProvider provider)

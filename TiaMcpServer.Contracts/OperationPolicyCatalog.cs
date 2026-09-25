@@ -97,6 +97,22 @@ public static class OperationPolicyCatalog
             ["read_object_attributes"] = OperationCapability.Observe,
             ["list_capabilities"] = OperationCapability.Observe,
 
+            // PLC read domain (R1 plc_read)
+            ["list_plcs"] = OperationCapability.Observe,
+            ["list_blocks"] = OperationCapability.Observe,
+            ["list_types"] = OperationCapability.Observe,
+            ["list_watch_tables"] = OperationCapability.Observe,
+            ["read_watch_table"] = OperationCapability.Observe,
+            ["list_technology_objects"] = OperationCapability.Observe,
+            ["read_technology_object"] = OperationCapability.Observe,
+            ["list_external_sources"] = OperationCapability.Observe,
+            ["list_software_units"] = OperationCapability.Observe,
+            ["list_alarm_text_lists"] = OperationCapability.Observe,
+            ["list_opcua_server_interfaces"] = OperationCapability.Observe,
+            ["read_block_fingerprints"] = OperationCapability.Observe,
+            ["read_checksums"] = OperationCapability.Observe,
+            ["compare_software"] = OperationCapability.Observe,
+
             // SafetyRead (read-only safe, but requires a verified expected identity)
             ["read_create_block_safety_snapshot"] = OperationCapability.SafetyRead,
             ["read_create_block_group_safety_snapshot"] = OperationCapability.SafetyRead,

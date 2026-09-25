@@ -41,6 +41,13 @@ public interface IObjectNode
     /// </summary>
     ObjectFollowResult FollowAttribute(string attributeName);
 
+    /// <summary>
+    /// Reads a value by name: a readable dynamic attribute, else a public CLR property of the
+    /// object's public API type. Returns <see cref="ObjectValueRead.Undeclared"/> when neither
+    /// exists; a failing getter is reported, never thrown.
+    /// </summary>
+    ObjectValueRead ReadValue(string name);
+
     /// <summary>Declared services (full type names), in declaration order.</summary>
     IReadOnlyList<ObjectMemberDescriptor> GetServices();
 
@@ -106,4 +113,30 @@ public sealed class ObjectFollowResult
     public static ObjectFollowResult Object(IObjectNode node) => new ObjectFollowResult(node, null);
 
     public static ObjectFollowResult NotAnObject(string valueTypeName) => new ObjectFollowResult(null, valueTypeName);
+}
+
+/// <summary>Outcome of <see cref="IObjectNode.ReadValue"/>.</summary>
+public sealed class ObjectValueRead
+{
+    private ObjectValueRead(bool isDeclared, object? value, string? error)
+    {
+        IsDeclared = isDeclared;
+        Value = value;
+        Error = error;
+    }
+
+    public bool IsDeclared { get; }
+
+    public object? Value { get; }
+
+    /// <summary>Why a declared value could not be read, or null.</summary>
+    public string? Error { get; }
+
+    public bool Succeeded => IsDeclared && Error is null;
+
+    public static ObjectValueRead Undeclared { get; } = new ObjectValueRead(false, null, null);
+
+    public static ObjectValueRead Of(object? value) => new ObjectValueRead(true, value, null);
+
+    public static ObjectValueRead Failed(string error) => new ObjectValueRead(true, null, error);
 }

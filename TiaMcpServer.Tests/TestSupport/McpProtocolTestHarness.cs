@@ -8,6 +8,7 @@ using TiaMcpServer.Batch;
 using TiaMcpServer.Contracts;
 using TiaMcpServer.Network;
 using TiaMcpServer.ObjectRead;
+using TiaMcpServer.PlcRead;
 using TiaMcpServer.Tests.Network;
 using TiaMcpServer.Safety;
 using TiaMcpServer.Tools;
@@ -117,7 +118,8 @@ internal sealed class McpProtocolTestHarness : IAsyncDisposable
                 builder.WithTools<ProjectReadTools>()
                        .WithTools<ReadBatchTools>()
                        .WithTools<NetworkReadTools>()
-                       .WithTools<ObjectReadTools>();
+                       .WithTools<ObjectReadTools>()
+                       .WithTools<PlcReadTools>();
 
                 if (accessMode == McpAccessMode.ReadWrite)
                 {

@@ -14,6 +14,7 @@ public static class WorkerProtocol
         "response-session-identity",
         "deterministic-project-selection",
         "typed-project-tree-selector",
-        "generic-object-read"
+        "generic-object-read",
+        "plc-read"
     };
 }

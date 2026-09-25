@@ -89,6 +89,23 @@ internal sealed class FakeObjectNode : IObjectNode
         var value => ObjectFollowResult.NotAnObject(value.GetType().FullName!),
     };
 
+    public HashSet<string> FailingValues { get; } = new(StringComparer.Ordinal);
+
+    public ObjectValueRead ReadValue(string name)
+    {
+        if (FailingValues.Contains(name))
+        {
+            return ObjectValueRead.Failed("read failed");
+        }
+
+        if (string.Equals(name, "Name", StringComparison.Ordinal) && Name is not null && !_attributes.ContainsKey(name))
+        {
+            return ObjectValueRead.Of(Name);
+        }
+
+        return _attributes.TryGetValue(name, out var value) ? ObjectValueRead.Of(value) : ObjectValueRead.Undeclared;
+    }
+
     public IReadOnlyList<ObjectMemberDescriptor> GetServices()
         => _services.Keys.Select(name => new ObjectMemberDescriptor(name, name)).ToList();
 

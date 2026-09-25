@@ -53,7 +53,7 @@ falling back to another mode.
 
 ### Read-write mode
 
-Read-write mode exposes 15 tools: the five read-only observation tools plus ten
+Read-write mode exposes 16 tools: the six read-only observation tools plus ten
 read-write-only tools. It preserves the preview-then-apply safety-token model.
 
 ### Read-only mode
@@ -63,7 +63,7 @@ archives, switches, or closes a project; never compiles; never controls a PLC;
 and never performs project-data mutations. It operates only on a project that
 is already open in the attached TIA Portal instance.
 
-The read-only surface contains exactly five tools.
+The read-only surface contains exactly six tools.
 
 A supplied `projectPath` in read-only mode is an assertion. It must identify the
 currently open project; it is never used to open or switch projects.
@@ -76,6 +76,7 @@ Tool registration is explicit and mode-dependent. The host always registers:
 - `ReadBatchTools`
 - `NetworkReadTools`
 - `ObjectReadTools`
+- `PlcReadTools`
 
 It registers the following only in read-write mode:
 
@@ -105,6 +106,7 @@ preview-only live V21 evidence are recorded in the
 | `execute_read_batch` | Execute up to 50 validated observation operations. |
 | `network_read` | Execute up to 50 validated network observation operations. |
 | `object_read` | Execute up to 50 generic Openness object reads addressed by an explicit object path. |
+| `plc_read` | Execute up to 50 typed PLC program reads (listings, table entries, TO parameters, fingerprints, checksums, offline comparison). |
 
 The read batch supports:
 
@@ -515,6 +517,17 @@ ObjectReadOperationRequest (strict, per-operation fields)
 - **Exports.** `DocumentInfo` is removed from `export_object` output as it is from
   `get_block_content`, so repeated exports of an unchanged object are byte-identical and the
   whole-document SHA-256 validates every character window.
+
+### R1 `plc_read` on the same seam
+
+`plc_read` adds no new mechanism: its host catalog, invoker, and payload contract use the
+DomainReads framework, and its worker listings are `GroupTreeLister` walks over `IObjectNode`
+(`TiaMcpServer.OpennessWorker/PlcRead/`). `PlcLocator` finds PLC software in ungrouped and grouped
+devices at any device-item depth and selects exactly one (ordinal name, or the only PLC). Values are
+read with `IObjectNode.ReadValue` — a readable dynamic attribute, else a public CLR property — and
+normalized by `ObjectScalarNormalizer` into JSON scalars (enum symbols, ISO-8601 dates). Only block
+fingerprints (`FingerprintProvider.GetFingerprints`) and offline comparison
+(`PlcSoftware.CompareTo`) use typed Siemens calls, in `Openness/PlcReadService.cs`.
 
 ## 8. Write safety
 

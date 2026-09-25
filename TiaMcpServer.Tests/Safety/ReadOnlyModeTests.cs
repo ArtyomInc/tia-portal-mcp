@@ -544,9 +544,7 @@ public class ReadOnlyModeTests
     [Fact]
     public void ReadOnlyMode_HasExactlyTheApprovedReadTools()
     {
-        var networkReadType = typeof(NetworkOperationRequest).Assembly.GetType("TiaMcpServer.Network.NetworkReadTools");
-        Assert.NotNull(networkReadType);
-        var toolNames = new[] { typeof(ProjectReadTools), typeof(ReadBatchTools), networkReadType!, typeof(TiaMcpServer.ObjectRead.ObjectReadTools) }
+        var toolNames = ApprovedToolSurface.ReadOnlyToolTypes
             .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance))
             .Select(method => method.GetCustomAttribute<McpServerToolAttribute>())
             .Where(attribute => attribute is not null)
@@ -554,9 +552,7 @@ public class ReadOnlyModeTests
             .OrderBy(name => name)
             .ToArray();
 
-        Assert.Equal(
-            new[] { "browse_project_tree", "execute_read_batch", "get_project_status", "network_read", "object_read" },
-            toolNames);
+        Assert.Equal(ApprovedToolSurface.ReadOnlyToolNames, toolNames);
     }
 
     [Fact]
@@ -572,15 +568,7 @@ public class ReadOnlyModeTests
             .OrderBy(name => name)
             .ToArray();
 
-        Assert.Equal(
-            new[]
-            {
-                "apply_write_batch", "archive_project", "browse_project_tree", "close_project",
-                "compile_check", "create_project", "execute_read_batch", "get_project_status",
-                "network_read", "network_write", "object_read", "open_project", "preview_write_batch",
-                "save_project", "save_project_as"
-            },
-            toolNames);
+        Assert.Equal(ApprovedToolSurface.ReadWriteToolNames, toolNames);
     }
 
     [Fact]

@@ -814,6 +814,42 @@ while ((line = Console.In.ReadLine()) is not null)
             });
             break;
 
+        case "plc-read":
+            Respond(ReadMethod(line) switch
+            {
+                "list_plcs" => Success(ToCamelCaseJson(new PlcListInfo { Plcs = { PlcSummaryFixture() } })),
+                "read_watch_table" or "read_technology_object" => Success(ToCamelCaseJson(new PlcObjectEntriesInfo
+                {
+                    PlcName = "PLC_1",
+                    Target = DomainObjectFixture(ReadField(line, "plcObjectName") ?? "Table", "PlcWatchTable"),
+                    Entries = { new DomainEntryInfo { Name = "Start", Values = { ["Address"] = "%I0.0", ["DisplayFormat"] = "Bool" } } },
+                    TotalCount = 1,
+                })),
+                "read_block_fingerprints" => Success(ToCamelCaseJson(new PlcFingerprintsInfo
+                {
+                    PlcName = "PLC_1",
+                    Target = DomainObjectFixture("Main", "OB"),
+                    Fingerprints = { new PlcFingerprintInfo { Id = "Code", Value = "AB12" } },
+                })),
+                "read_checksums" => Success(ToCamelCaseJson(new PlcChecksumsInfo { PlcName = "PLC_1", Software = "E2 7F", TextLists = "FA 70" })),
+                "compare_software" => Success(ToCamelCaseJson(new PlcCompareInfo
+                {
+                    LeftPlcName = "PLC_1",
+                    RightPlcName = ReadField(line, "plcComparePlcName") ?? "PLC_2",
+                    Elements = { new PlcCompareElementInfo { Path = { "Program blocks", "Main" }, Depth = 2, LeftName = "Main", RightName = "Main", State = "ObjectsDifferent" } },
+                    TotalCount = 1,
+                })),
+                var method when method is not null && method.StartsWith("list_", StringComparison.Ordinal) => Success(ToCamelCaseJson(new PlcObjectListInfo
+                {
+                    PlcName = ReadField(line, "plcName") ?? "PLC_1",
+                    Items = { DomainObjectFixture("Main", "OB"), DomainObjectFixture("fbValve", "FB") },
+                    TotalCount = 3,
+                    NextCursor = "plc-cursor",
+                })),
+                _ => $$"""{"success":false,"error":"unexpected method '{{ReadMethod(line)}}' for plc-read"}"""
+            });
+            break;
+
         case "object-read-not-found":
             Respond("""{"success":false,"failureCategory":"target_not_found","error":"ObjectPath segment 0: 'Project' declares no composition 'Nope'."}""");
             break;
@@ -1167,6 +1203,31 @@ OpennessCapabilitiesInfo CapabilitiesFixture() => new()
         new() { Name = "Siemens.Engineering.WinCCUnified", Available = true, Version = "21.0.0.0" },
         new() { Name = "Siemens.Engineering.MC.Drives", Available = false },
     },
+};
+
+PlcSummaryInfo PlcSummaryFixture() => new()
+{
+    Name = "PLC_1",
+    DeviceName = "Station_1",
+    ObjectPath =
+    {
+        new ObjectPathSegmentInfo { Kind = "composition", Name = "Devices", ElementName = "Station_1", Index = 0 },
+        new ObjectPathSegmentInfo { Kind = "composition", Name = "DeviceItems", ElementName = "PLC_1", Index = 1 },
+        new ObjectPathSegmentInfo { Kind = "service", Name = "SoftwareContainer" },
+        new ObjectPathSegmentInfo { Kind = "attribute", Name = "Software" },
+    },
+};
+
+DomainObjectInfo DomainObjectFixture(string name, string kind) => new()
+{
+    Name = name,
+    Kind = kind,
+    TypeName = "Siemens.Engineering.SW.Blocks." + kind,
+    ObjectPath = PlcSummaryFixture().ObjectPath
+        .Append(new ObjectPathSegmentInfo { Kind = "attribute", Name = "BlockGroup" })
+        .Append(new ObjectPathSegmentInfo { Kind = "composition", Name = "Blocks", ElementName = name, Index = 0 })
+        .ToList(),
+    Values = { ["Number"] = 1, ["IsConsistent"] = true, ["ModifiedDate"] = "2026-09-25T07:00:00.0000000Z" },
 };
 
 string? ScenarioKey(string? path)

@@ -357,10 +357,12 @@ public class WorkerRequest
     /// <summary>Forwarded by: list_object_children (optional composition filter).</summary>
     public List<string>? ObjectCompositionNames { get; set; }
 
-    /// <summary>Forwarded by: list_object_children (1..200; null means 50).</summary>
+    /// <summary>
+    /// Forwarded by: list_object_children and every paged domain read (1..200; null means 50).
+    /// </summary>
     public int? ObjectPageSize { get; set; }
 
-    /// <summary>Forwarded by: list_object_children (opaque continuation).</summary>
+    /// <summary>Forwarded by: list_object_children and every paged domain read (opaque continuation).</summary>
     public string? ObjectCursor { get; set; }
 
     /// <summary>Forwarded by: export_object. Values from <see cref="ObjectExportOptionNames"/>.</summary>
@@ -371,6 +373,33 @@ public class WorkerRequest
 
     /// <summary>Forwarded by: export_object (window length, 1..30,000; null means 16,000).</summary>
     public int? ObjectExportMaxChars { get; set; }
+
+    #endregion
+
+    #region PLC read domain (R1 plc_read)
+
+    // PLC selection reuses PlcName (exact PLC software name; null means the only PLC).
+
+    /// <summary>Forwarded by: read_watch_table, read_technology_object, read_block_fingerprints.</summary>
+    public string? PlcObjectName { get; set; }
+
+    /// <summary>
+    /// Forwarded by: read_watch_table, read_technology_object, read_block_fingerprints (optional
+    /// group names below the listing root; null matches any group).
+    /// </summary>
+    public List<string>? PlcGroupPath { get; set; }
+
+    /// <summary>Forwarded by: every plc_read listing (optional case-insensitive name filter).</summary>
+    public string? PlcNameContains { get; set; }
+
+    /// <summary>Forwarded by: compare_software (the right-hand PLC software name).</summary>
+    public string? PlcComparePlcName { get; set; }
+
+    /// <summary>Forwarded by: compare_software (true returns identical elements too).</summary>
+    public bool? PlcIncludeIdentical { get; set; }
+
+    /// <summary>Forwarded by: read_technology_object (optional parameter-name filter).</summary>
+    public List<string>? PlcParameterNames { get; set; }
 
     #endregion
 

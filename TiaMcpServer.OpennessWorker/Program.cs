@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Siemens.Engineering;
 using TiaMcpServer.Contracts;
 using TiaMcpServer.OpennessWorker.Openness;
+using TiaMcpServer.OpennessWorker.PlcRead;
 using WorkerTiaPortalSession = TiaMcpServer.OpennessWorker.Openness.TiaPortalSession;
 
 namespace TiaMcpServer.OpennessWorker;
@@ -159,6 +160,18 @@ internal static class Program
                 "read_object_attributes" => WithProjectAndPortal(request, (project, portal) => Success(ObjectReadService.ReadAttributes(project, portal, request))),
                 "export_object" => WithProjectAndPortal(request, (project, portal) => Success(ObjectReadService.Export(project, portal, request))),
                 "list_capabilities" => WithSession(request, session => Success(ObjectReadService.ListCapabilities(session.TiaPortal))),
+                "list_plcs" => WithProject(request, project => Success(PlcReadBuilder.ListPlcs(PlcReadService.Root(project)))),
+                "list_blocks" or "list_types" or "list_watch_tables" or "list_technology_objects" or "list_external_sources"
+                    or "list_software_units" or "list_alarm_text_lists" or "list_opcua_server_interfaces"
+                    => WithProject(request, project => Success(PlcReadBuilder.List(
+                        PlcReadService.Root(project), request.Method, request.PlcName, request.PlcNameContains, request.ObjectPageSize, request.ObjectCursor))),
+                "read_watch_table" => WithProject(request, project => Success(PlcReadBuilder.ReadWatchTable(
+                    PlcReadService.Root(project), request.PlcName, RequirePlcObjectName(request), request.PlcGroupPath, request.ObjectPageSize, request.ObjectCursor))),
+                "read_technology_object" => WithProject(request, project => Success(PlcReadBuilder.ReadTechnologyObject(
+                    PlcReadService.Root(project), request.PlcName, RequirePlcObjectName(request), request.PlcGroupPath, request.PlcParameterNames, request.ObjectPageSize, request.ObjectCursor))),
+                "read_block_fingerprints" => WithProject(request, project => Success(PlcReadService.ReadBlockFingerprints(project, request))),
+                "read_checksums" => WithProject(request, project => Success(PlcReadBuilder.ReadChecksums(PlcReadService.Root(project), request.PlcName))),
+                "compare_software" => WithProject(request, project => Success(PlcReadService.CompareSoftware(project, request))),
                 "probe_subnet_lifecycle_mutations" => ProbeSubnetLifecycleMutations(request),
                 "search_equipment_catalog" => SearchEquipmentCatalog(request),
                 "add_network_device" => AddNetworkDevice(request),
@@ -1345,6 +1358,11 @@ internal static class Program
             return body(session.Project);
         });
     }
+
+    private static string RequirePlcObjectName(WorkerRequest request)
+        => string.IsNullOrWhiteSpace(request.PlcObjectName)
+            ? throw new WorkerOperationException(WorkerFailureCategories.ValidationError, "PlcObjectName is required.")
+            : request.PlcObjectName!;
 
     /// <summary>Like <see cref="WithProject"/>, additionally handing the body the attached Portal.</summary>
     private static WorkerResponse WithProjectAndPortal(WorkerRequest request, Func<Project, TiaPortal?, WorkerResponse> body)

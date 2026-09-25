@@ -124,7 +124,7 @@ public class McpToolSchemaTests
     /// ProjectLifecycleTools lives in - which, for TiaMcpServer.Tests, is the test assembly
     /// itself, since the host's tool source files are compiled directly into it (see
     /// TiaMcpServer.Tests.csproj's Compile Include entries). Counts every method on those types
-    /// carrying [McpServerTool] and asserts the exact approved surface (15 tools), and the
+    /// carrying [McpServerTool] and asserts the exact approved surface (see ApprovedToolSurface), and the
     /// internal lifecycle probe (probe_project_status_for_lifecycle, never [McpServerTool]-decorated)
     /// absent.
     /// </summary>
@@ -143,24 +143,7 @@ public class McpToolSchemaTests
             .OrderBy(name => name)
             .ToArray();
 
-        var expected = new[]
-        {
-            "get_project_status",
-            "browse_project_tree",
-            "execute_read_batch",
-            "compile_check",
-            "open_project",
-            "create_project",
-            "save_project",
-            "save_project_as",
-            "archive_project",
-            "close_project",
-            "preview_write_batch",
-            "apply_write_batch",
-            "network_read",
-            "network_write",
-            "object_read"
-        };
+        var expected = ApprovedToolSurface.ReadWriteToolNames;
 
         Assert.Equal(expected.OrderBy(name => name), toolNames);
         Assert.DoesNotContain("probe_network_object_attributes", toolNames);
@@ -169,13 +152,7 @@ public class McpToolSchemaTests
     [Fact]
     public void McpReadOnlySurface_RemainsExactlyTheApprovedTools()
     {
-        var toolNames = new[]
-        {
-            typeof(ProjectReadTools),
-            typeof(ReadBatchTools),
-            RequiredNetworkToolType("NetworkReadTools"),
-            typeof(TiaMcpServer.ObjectRead.ObjectReadTools),
-        }
+        var toolNames = ApprovedToolSurface.ReadOnlyToolTypes
             .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance))
             .Select(method => method.GetCustomAttribute<McpServerToolAttribute>())
             .Where(attribute => attribute is not null)
@@ -183,9 +160,7 @@ public class McpToolSchemaTests
             .OrderBy(name => name)
             .ToArray();
 
-        Assert.Equal(
-            new[] { "browse_project_tree", "execute_read_batch", "get_project_status", "network_read", "object_read" },
-            toolNames);
+        Assert.Equal(ApprovedToolSurface.ReadOnlyToolNames, toolNames);
         Assert.DoesNotContain("probe_network_object_attributes", toolNames);
     }
 

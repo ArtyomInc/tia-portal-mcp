@@ -28,12 +28,15 @@ well-designed. The three biggest problems, in order of impact:
 
 ## Openness read coverage — open follow-ups (2026-09-25)
 
-Found while delivering R0 `object_read`
-([acceptance](superpowers/acceptance/reports/2026-09-25-r0-object-read-live.md)):
+Found while delivering the read roadmap
+([R0](superpowers/acceptance/reports/2026-09-25-r0-object-read-live.md),
+[R1](superpowers/acceptance/reports/2026-09-25-r1-plc-read-live.md)):
 
 | # | Follow-up | Where | Why |
 |---|-----------|-------|-----|
 | R0.1 | `DateTime`, `TimeSpan`, primitive arrays (`string[]`), and `MultilingualText` attribute values are `unrepresentable`. Decide whether the shared value contract gains ISO-8601 strings, arrays, and per-language texts | `NetworkAttributeValueNormalizer.cs` | Common project and module attributes (`CreationTime`, `InstallationDate`, `PnDnsConfiguration`, comments) are invisible today; the normalizer is shared with `inspect_network_object`, so it is a contract change for both tools |
+| R1.1 | ProDiag supervisions are not listed: `SupervisionProvider` has no attributes or compositions in V21, only methods | `PlcRead/PlcReadBuilder.cs` | Needs a method-level investigation against a project that uses ProDiag |
+| R1.2 | Non-empty technology objects, external sources, Software Units, alarm text lists, and OPC UA interfaces are verified offline only | [R1 acceptance](superpowers/acceptance/reports/2026-09-25-r1-plc-read-live.md) | The live project has none; re-run the listings on a richer project |
 | R0.2 | The service denylist matches `Online`/`Download`/`Upload` as substrings, which also refuses `TcGatewaySearchAndDownloadProvider` (Teamcenter, not a device download) | `ObjectModel/ObjectPathRules.cs` | Conservative by design; replace with an explicit type list if a Teamcenter read is ever needed |
 
 ## Phase 0 — Quick wins (small-model usability; ~1 day total, all low-risk)

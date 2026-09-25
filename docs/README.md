@@ -47,7 +47,10 @@ Agent-facing build and convention reference lives in [AGENTS.md](../AGENTS.md).
 acceptance reports produced while building features. It is historical process material, not
 current documentation — see its index for what is there and how to read it.
 
-Latest process entries: [R0 generic object read design](superpowers/specs/2026-09-25-r0-object-read-design.md),
+Latest process entries: [R1 PLC read domain (`plc_read`) design](superpowers/specs/2026-09-25-r1-plc-read-design.md),
+its [implementation plan](superpowers/plans/2026-09-25-r1-plc-read.md), and
+[its read-only live acceptance report](superpowers/acceptance/reports/2026-09-25-r1-plc-read-live.md);
+[R0 generic object read design](superpowers/specs/2026-09-25-r0-object-read-design.md),
 its [implementation plan](superpowers/plans/2026-09-25-r0-object-read.md), and
 [its read-only live acceptance report](superpowers/acceptance/reports/2026-09-25-r0-object-read-live.md);
 [issue #32 scalable project-tree browsing v3 design](superpowers/specs/2026-09-06-issue-32-scalable-project-tree-browsing-v3-design.md),
