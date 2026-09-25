@@ -248,6 +248,8 @@
     <Compile Include="..\TiaMcpServer.OpennessWorker\LibraryRead\*.cs" Link="Linked\LibraryRead\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer\HmiRead\*.cs" Link="Host\HmiRead\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer.OpennessWorker\HmiRead\*.cs" Link="Linked\HmiRead\%(Filename)%(Extension)" />
+    <Compile Include="..\TiaMcpServer\GovernanceRead\*.cs" Link="Host\GovernanceRead\%(Filename)%(Extension)" />
+    <Compile Include="..\TiaMcpServer.OpennessWorker\GovernanceRead\*.cs" Link="Linked\GovernanceRead\%(Filename)%(Extension)" />
     <Compile Include="..\TiaMcpServer.OpennessWorker\ObjectModel\*.cs" Link="Linked\ObjectModel\%(Filename)%(Extension)" />
   </ItemGroup>
   <Import Project="TestUtilities\WorkerSerializationHarness.targets" />

@@ -9,6 +9,7 @@ using TiaMcpServer.Contracts;
 using TiaMcpServer.Cursors;
 using TiaMcpServer.Network;
 using TiaMcpServer.ObjectRead;
+using TiaMcpServer.GovernanceRead;
 using TiaMcpServer.HmiRead;
 using TiaMcpServer.LibraryRead;
 using TiaMcpServer.PlcRead;
@@ -95,7 +96,8 @@ namespace TiaMcpServer
                 .WithTools<ObjectReadTools>()
                 .WithTools<PlcReadTools>()
                 .WithTools<LibraryReadTools>()
-                .WithTools<HmiReadTools>();
+                .WithTools<HmiReadTools>()
+                .WithTools<GovernanceReadTools>();
 
             if (accessMode == McpAccessMode.ReadWrite)
             {

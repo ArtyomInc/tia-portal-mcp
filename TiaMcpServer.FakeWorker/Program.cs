@@ -983,6 +983,41 @@ while ((line = Console.In.ReadLine()) is not null)
             });
             break;
 
+        case "governance-read":
+            Respond(ReadMethod(line) switch
+            {
+                "list_portal_processes" => Success(ToCamelCaseJson(new PortalProcessListInfo
+                {
+                    Processes = { new PortalProcessInfo { Id = 3572, Mode = "WithUserInterface", ProjectPath = @"C:\Projects\test.ap21", IsAttached = true } },
+                })),
+                "read_safety" => $$"""{"success":false,"failureCategory":"capability_unavailable","error":"PLC 'PLC_1' has no Safety administration."}""",
+                "read_umac" or "list_test_suite" or "list_multiuser" or "list_vci_workspaces" => Success(ToCamelCaseJson(new GovernanceInfo
+                {
+                    Scope = ReadMethod(line) == "list_multiuser" ? "portal" : "project",
+                    Root = ReadMethod(line) == "list_multiuser" ? "portal" : "project",
+                    Sections =
+                    {
+                        new GovernanceSectionInfo
+                        {
+                            Name = "projectUsers",
+                            Items =
+                            {
+                                new GovernanceItemInfo
+                                {
+                                    Name = "Operator",
+                                    Kind = "ProjectUser",
+                                    ObjectPath = { new ObjectPathSegmentInfo { Kind = "service", Name = "UmacConfigurator" }, new ObjectPathSegmentInfo { Kind = "composition", Name = "ProjectUsers", ElementName = "Operator", Index = 0 } },
+                                    Values = { ["IsActive"] = true },
+                                    References = { ["Roles"] = new List<string> { "HMI Operator" } },
+                                },
+                            },
+                        },
+                    },
+                })),
+                _ => $$"""{"success":false,"error":"unexpected method '{{ReadMethod(line)}}' for governance-read"}"""
+            });
+            break;
+
         case "object-read-not-found":
             Respond("""{"success":false,"failureCategory":"target_not_found","error":"ObjectPath segment 0: 'Project' declares no composition 'Nope'."}""");
             break;

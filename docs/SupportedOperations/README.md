@@ -74,6 +74,7 @@ Read responses may include `warnings` for partial or degraded data. Hardware rea
 | HMI | [HMI_OPERATIONS_SUMMARY.md](HMI_OPERATIONS_SUMMARY.md) |
 | Networks and topology | [NETWORK_OPERATIONS_SUMMARY.md](NETWORK_OPERATIONS_SUMMARY.md) |
 | Generic object reads (any Openness object) | [OBJECT_READ_SUMMARY.md](OBJECT_READ_SUMMARY.md) |
+| Governance reads (Portal processes, UMAC, Safety, TestSuite, Multiuser, VCI) | [GOVERNANCE_READ_SUMMARY.md](GOVERNANCE_READ_SUMMARY.md) |
 | HMI reads (WinCC Unified and Classic: screens, items, scripts, tags, alarms) | [HMI_READ_SUMMARY.md](HMI_READ_SUMMARY.md) |
 | Library reads (types, versions, master copies, update check, instances) | [LIBRARY_READ_SUMMARY.md](LIBRARY_READ_SUMMARY.md) |
 | PLC program reads (listings, tables, fingerprints, comparison) | [PLC_READ_SUMMARY.md](PLC_READ_SUMMARY.md) |

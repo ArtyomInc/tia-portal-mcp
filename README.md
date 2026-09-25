@@ -16,7 +16,7 @@ The current implementation covers project discovery and lifecycle operations, PL
 
 ## Tools
 
-The server currently exposes 18 tools in read-write mode and 8 tools in read-only mode.
+The server currently exposes 19 tools in read-write mode and 9 tools in read-only mode.
 
 ### Batch operations
 
@@ -67,6 +67,10 @@ Available write operations (for `preview_write_batch` / `apply_write_batch`): `u
 ### HMI reads
 
 `hmi_read` reads WinCC Unified and WinCC Classic configuration in up to 50 read-only operations: `list_hmis`, `list_screens`, `list_screen_items`, `read_screen_scripts` (JavaScript of events and dynamizations), `list_hmi_tags`, `list_hmi_connections`, `list_hmi_alarms`, `list_hmi_logs`, `list_hmi_text_lists`, and `list_hmi_scripts`. A listing a runtime does not expose fails `capability_unavailable`. See [docs/SupportedOperations/HMI_READ_SUMMARY.md](https://github.com/Czarnak/tia-portal-mcp/blob/main/docs/SupportedOperations/HMI_READ_SUMMARY.md).
+
+### Governance reads
+
+`governance_read` reads governance, security, and collaboration state in up to 50 read-only operations: `list_portal_processes`, `read_umac` (users, roles and their engineering rights, UMC users and groups), `read_safety` (Safety administration state, settings, program signatures, runtime groups), `list_test_suite`, `list_multiuser`, and `list_vci_workspaces`. No password is read or needed; nothing is executed. See [docs/SupportedOperations/GOVERNANCE_READ_SUMMARY.md](https://github.com/Czarnak/tia-portal-mcp/blob/main/docs/SupportedOperations/GOVERNANCE_READ_SUMMARY.md).
 
 ### Project tools
 

@@ -140,6 +140,14 @@ public static class OperationPolicyCatalog
             ["list_hmi_text_lists"] = OperationCapability.Observe,
             ["list_hmi_scripts"] = OperationCapability.Observe,
 
+            // Governance reads (R5 governance_read)
+            ["list_portal_processes"] = OperationCapability.Observe,
+            ["read_umac"] = OperationCapability.Observe,
+            ["read_safety"] = OperationCapability.Observe,
+            ["list_test_suite"] = OperationCapability.Observe,
+            ["list_multiuser"] = OperationCapability.Observe,
+            ["list_vci_workspaces"] = OperationCapability.Observe,
+
             // SafetyRead (read-only safe, but requires a verified expected identity)
             ["read_create_block_safety_snapshot"] = OperationCapability.SafetyRead,
             ["read_create_block_group_safety_snapshot"] = OperationCapability.SafetyRead,

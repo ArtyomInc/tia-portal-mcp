@@ -7,6 +7,7 @@ using TiaMcpServer.OpennessWorker.PlcRead;
 using TiaMcpServer.OpennessWorker.HardwareRead;
 using TiaMcpServer.OpennessWorker.LibraryRead;
 using TiaMcpServer.OpennessWorker.HmiRead;
+using TiaMcpServer.OpennessWorker.GovernanceRead;
 using WorkerTiaPortalSession = TiaMcpServer.OpennessWorker.Openness.TiaPortalSession;
 
 namespace TiaMcpServer.OpennessWorker;
@@ -189,6 +190,14 @@ internal static class Program
                     PlcReadService.Root(project), portal is null ? null : new EngineeringObjectNode(portal), request.LibraryName, RequirePlcObjectName(request), request.PlcGroupPath))),
                 "check_library_updates" => WithProjectAndPortal(request, (project, portal) => Success(LibraryReadService.CheckUpdates(project, portal, request))),
                 "find_type_instances" => WithProjectAndPortal(request, (project, portal) => Success(LibraryReadService.FindInstances(project, portal, request))),
+                "list_portal_processes" => WithSession(request, session => Success(GovernanceReadService.ListPortalProcesses(session.CurrentProcessId))),
+                "read_umac" => WithProject(request, project => Success(GovernanceReadBuilder.ReadProjectService(PlcReadService.Root(project), "UmacConfigurator", GovernanceReadBuilder.UmacSections))),
+                "read_safety" => WithProject(request, project => Success(GovernanceReadBuilder.ReadSafety(PlcReadService.Root(project), request.PlcName))),
+                "list_test_suite" => WithProject(request, project => Success(GovernanceReadBuilder.ReadProjectService(PlcReadService.Root(project), "TestSuiteService", GovernanceReadBuilder.TestSuiteSections))),
+                "list_vci_workspaces" => WithProject(request, project => Success(GovernanceReadBuilder.ReadProjectService(PlcReadService.Root(project), "VersionControlInterface", GovernanceReadBuilder.VciSections))),
+                "list_multiuser" => WithProjectAndPortal(request, (project, portal) => Success(GovernanceReadBuilder.ReadPortal(
+                    portal is null ? throw new WorkerOperationException(WorkerFailureCategories.WorkerOperationFailed, "The worker is not attached to a TIA Portal instance.") : new EngineeringObjectNode(portal),
+                    GovernanceReadBuilder.MultiuserSections))),
                 "list_hmis" => WithProject(request, project => Success(HmiReadBuilder.ListHmis(PlcReadService.Root(project)))),
                 "list_screens" or "list_hmi_tags" or "list_hmi_connections" or "list_hmi_alarms" or "list_hmi_logs"
                     or "list_hmi_text_lists" or "list_hmi_scripts"

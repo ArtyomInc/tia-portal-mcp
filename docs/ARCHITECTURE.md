@@ -53,7 +53,7 @@ falling back to another mode.
 
 ### Read-write mode
 
-Read-write mode exposes 18 tools: the eight read-only observation tools plus ten
+Read-write mode exposes 19 tools: the nine read-only observation tools plus ten
 read-write-only tools. It preserves the preview-then-apply safety-token model.
 
 ### Read-only mode
@@ -63,7 +63,7 @@ archives, switches, or closes a project; never compiles; never controls a PLC;
 and never performs project-data mutations. It operates only on a project that
 is already open in the attached TIA Portal instance.
 
-The read-only surface contains exactly eight tools.
+The read-only surface contains exactly nine tools.
 
 A supplied `projectPath` in read-only mode is an assertion. It must identify the
 currently open project; it is never used to open or switch projects.
@@ -79,6 +79,7 @@ Tool registration is explicit and mode-dependent. The host always registers:
 - `PlcReadTools`
 - `LibraryReadTools`
 - `HmiReadTools`
+- `GovernanceReadTools`
 
 It registers the following only in read-write mode:
 
@@ -108,6 +109,7 @@ preview-only live V21 evidence are recorded in the
 | `execute_read_batch` | Execute up to 50 validated observation operations. |
 | `network_read` | Execute up to 50 validated network observation operations. |
 | `object_read` | Execute up to 50 generic Openness object reads addressed by an explicit object path. |
+| `governance_read` | Execute up to 50 governance reads (Portal processes, UMAC, Safety, TestSuite, Multiuser, VCI). |
 | `hmi_read` | Execute up to 50 WinCC Unified/Classic reads (screens, items, scripts, tags, connections, alarms, logs, lists). |
 | `library_read` | Execute up to 50 reads of the project library and open global libraries (types, versions, master copies, update check, instances). |
 | `plc_read` | Execute up to 50 typed PLC program reads (listings, table entries, TO parameters, fingerprints, checksums, offline comparison). |
@@ -565,6 +567,16 @@ hierarchies with `GroupTreeLister`, and collects screen scripts from `EventHandl
 as interfaces). The WinCC assemblies are therefore never referenced at compile time, and the
 reference stubs need no WinCC counterpart. Listings a runtime does not expose fail
 `capability_unavailable`.
+
+### R5 `governance_read`
+
+`GovernanceReadBuilder` resolves one scope object per operation — a project service
+(`UmacConfigurator`, `TestSuiteService`, `VersionControlInterface`), the CPU's
+`SafetyAdministration` service (found through `PlcLocator`), or the Portal — with the R0 resolver,
+and lists named sections with every scalar attribute and the names of associated objects. A missing
+service becomes `capability_unavailable`. `TiaPortal.GetProcesses()` in
+`Openness/GovernanceReadService.cs` is the only typed Siemens call and does not attach. No
+password-bearing API is called.
 
 ## 8. Write safety
 

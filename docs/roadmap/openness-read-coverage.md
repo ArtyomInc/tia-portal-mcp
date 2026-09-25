@@ -39,7 +39,7 @@ temporary export directory.
 | R2 | `network_read` (extended) | Device-group tree, unplugged items, hardware identifiers, port topology, offline hardware comparison (communication connections were already covered by `list_network_objects`; diagnostics settings via `object_read`) | Done — [acceptance](../superpowers/acceptance/reports/2026-09-25-r2-hardware-read-live.md) |
 | R3 | `library_read` (new) | Project and open global libraries: types, versions, status, dependencies, master copies, update check, instance search, library comparison | Implemented — live acceptance in the combined R3–R5 read-only run |
 | R4 | `hmi_read` (new) | WinCC Classic (`HmiTarget`) and WinCC Unified (`HmiSoftware`) inventories: screens, tags, connections, alarms, logs, text/graphic lists, scripts | Implemented — live acceptance in the combined R3–R5 read-only run |
-| R5 | `governance_read` (new) | Portal processes and settings, project texts, UMAC users/roles, Safety administration and signatures, TestSuite inventory, Multiuser and VCI visibility | Planned |
+| R5 | `governance_read` (new) | Portal processes and settings, project texts, UMAC users/roles, Safety administration and signatures, TestSuite inventory, Multiuser and VCI visibility | Implemented — live acceptance in the combined R3–R5 read-only run |
 | R6 | behind `--enable-online` | Online state and online comparison — contacts a real device | Not scheduled |
 
 ## Cross-cutting rules
